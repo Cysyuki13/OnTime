@@ -1,8 +1,16 @@
-const CACHE = 'hk-timer-v27';
+const CACHE = 'hk-timer-v30';
 const ASSETS = [
-  './', './index.html', './manifest.json',
-  './css/main.css', './css/components.css',
-  './js/app.js', './js/config.js',
+  './',
+  './index.html',
+  './manifest.json?v=30',
+  './css/main.css?v=30',
+  './css/components.css?v=30',
+  './js/app.js?v=30',
+  './js/config.js',
+  './icons/icon-192.png?v=30',
+  './icons/icon-512.png?v=30',
+  './icons/icon-192-maskable.png?v=30',
+  './icons/icon-512-maskable.png?v=30'
 ];
 
 self.addEventListener('install', (e) => {
@@ -33,4 +41,3 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
-//(註：內容由 AI 生成)
