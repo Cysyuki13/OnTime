@@ -50,31 +50,23 @@ export class LocationAutocompleteView {
         }
 
         const badgeMap = {
-          landmark: '地標',
-          hkdb: '全港資料庫',
-          hkgeo: '地政總署',
-          osm: '地圖地點',
-          mtr: '港鐵站',
-          kmb: '車站',
-        };
-        const iconMap = {
-          landmark: '🏛️',
-          hkdb: '🏙️',
-          osm: '📍',
-          mtr: '🚇',
-          kmb: '🚏',
+          landmark: 'LM',
+          hkdb: 'DB',
+          hkgeo: 'GEO',
+          osm: 'OSM',
+          mtr: 'MTR',
+          kmb: 'BM',
         };
 
         list.innerHTML = results
           .map(
             (loc, i) => `
               <div class="autocomplete-item" data-idx="${i}">
-                <span class="autocomplete-icon">${iconMap[loc.source] ?? '📍'}</span>
                 <div class="autocomplete-body">
                   <div class="autocomplete-name">${this._esc(loc.name)}</div>
                   ${loc.address ? `<div class="autocomplete-sub">${this._esc(loc.address)}</div>` : ''}
                 </div>
-                <span class="card-badge">${badgeMap[loc.source] ?? '地點'}</span>
+                <span class="card-badge">${badgeMap[loc.source] ?? '·'}</span>
               </div>
             `
           )
@@ -107,3 +99,4 @@ export class LocationAutocompleteView {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   }
 }
+//(註：內容由 AI 生成)

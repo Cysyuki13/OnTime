@@ -66,3 +66,4 @@ export class LoadingView {
     document.body.classList.remove('hk-modal-open');
   }
 }
+//(註：內容由 AI 生成)

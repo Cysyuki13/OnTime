@@ -5,11 +5,15 @@ import { DepartureCalculator } from './DepartureCalculator.js';
 import { CONFIG } from '../config.js';
 
 export class EventService {
-  constructor({ storage, etaService, notificationService }) {
+  constructor({ storage, etaService, notificationService, settingsService = null }) {
     this.storage = storage;
     this.notificationService = notificationService;
-    this.planner = new RoutePlanningService({ etaService, storage });
-    this.calculator = new DepartureCalculator();
+    this.settingsService = settingsService;
+    this.planner = new RoutePlanningService({ etaService, storage, settingsService });
+    this.calculator = new DepartureCalculator({
+      getBufferMinutes: () => settingsService?.get('bufferMinutes') ?? 0,
+      getArriveBeforeMinutes: () => settingsService?.get('arriveBeforeMinutes') ?? 0,
+    });
   }
 
   list() {

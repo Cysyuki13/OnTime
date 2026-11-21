@@ -73,10 +73,10 @@ export class EventFormView {
           <label>出發起點</label>
           <div class="origin-row">
             ${this._originAutocomplete.render(this._originLocation.name)}
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-gps" title="使用目前 GPS 位置">📍 定位</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-gps" title="使用目前 GPS 位置">定位</button>
           </div>
           <div class="selected-coords" id="coords-origin">
-            ✓ 地圖座標：${this._originLocation.lat.toFixed(4)}, ${this._originLocation.lng.toFixed(4)}
+            座標：${this._originLocation.lat.toFixed(4)}, ${this._originLocation.lng.toFixed(4)}
           </div>
         </div>
 
@@ -169,9 +169,10 @@ export class EventFormView {
     if (!el) return;
     if (loc?.hasCoords) {
       el.hidden = false;
-      el.textContent = `✓ 地圖座標：${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+      el.textContent = `座標：${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
     } else {
       el.hidden = true;
     }
   }
 }
+//(註：內容由 AI 生成)

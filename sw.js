@@ -1,4 +1,4 @@
-const CACHE = 'hk-timer-v26';
+const CACHE = 'hk-timer-v27';
 const ASSETS = [
   './', './index.html', './manifest.json',
   './css/main.css', './css/components.css',
@@ -33,3 +33,4 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+//(註：內容由 AI 生成)

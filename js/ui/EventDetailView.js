@@ -64,7 +64,7 @@ export class EventDetailView {
               <div class="segment" data-seg-idx="${idx}" data-it-id="${it.id}" title="點擊在地圖高亮此段路徑">
                 <div class="segment-icon">${meta.icon}</div>
                 <div class="segment-info">
-                  <div class="segment-mode">${meta.label}${s.route ? ` · ${s.route}` : ''}</div>
+                  <div class="segment-mode">${meta.label}${s.route ? ` <span class="route-chip">${s.route}</span>` : ''}</div>
                   <div class="segment-detail">${this._esc(detail)}</div>
                 </div>
                 <div class="segment-time">${timeRange}</div>
@@ -91,7 +91,7 @@ export class EventDetailView {
                   ${badges}
                 </div>
                 <div class="itinerary-meta-row">
-                  <span class="card-total-time">⏱️ ${totalStr}</span>
+                  <span class="card-total-time">${totalStr}</span>
                   <span class="card-sub">
                     ${it.summary} · 最遲出發 ${fmt(it.latestDeparture)} · 到達 ${fmt(it.estimatedArrival)}
                   </span>
@@ -116,12 +116,12 @@ export class EventDetailView {
                 <span class="endpoint-time">${fmt(it.estimatedArrival)}</span>
               </div>
 
-              ${it.impracticalReason ? `<div class="itinerary-reject-note">🚫 ${this._esc(it.impracticalReason)}</div>` : ''}
-              ${it.remarks ? `<div class="itinerary-remarks">📝 ${this._esc(it.remarks)}</div>` : ''}
+              ${it.impracticalReason ? `<div class="itinerary-reject-note">${this._esc(it.impracticalReason)}</div>` : ''}
+              ${it.remarks ? `<div class="itinerary-remarks">${this._esc(it.remarks)}</div>` : ''}
 
               <div class="itinerary-actions">
                 <button type="button" class="btn btn-ghost btn-sm" data-action="select" data-id="${it.id}">
-                  ${isChosen ? '✓ 已選此方案' : '選擇此方案'}
+                  ${isChosen ? '已選此方案' : '選擇此方案'}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="remarks" data-id="${it.id}">備註</button>
                 <label class="toggle-wrap">
@@ -151,7 +151,7 @@ export class EventDetailView {
       <div class="detail-topbar">
         <button type="button" class="btn btn-ghost btn-sm" id="btn-back">← 返回</button>
         <div class="detail-topbar-actions">
-          <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-drawer" title="開啟/隱藏外部路徑資訊選單">📋 路徑資訊</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-drawer" title="開啟/隱藏外部路徑資訊選單">路徑資訊</button>
         </div>
       </div>
 
@@ -163,8 +163,8 @@ export class EventDetailView {
       <div class="detail-section-label">路線方案（已選方案預設展開；其餘收合，點按可展開；點擊分段可於地圖高亮）</div>
       ${itCards}
 
-      <button type="button" class="btn btn-ghost btn-block" id="btn-refresh">🔄 重新計算最短時間與班次</button>
-      <button type="button" class="btn btn-danger btn-block" id="btn-delete">🗑️ 刪除行程</button>
+      <button type="button" class="btn btn-ghost btn-block" id="btn-refresh">重新計算最短時間與班次</button>
+      <button type="button" class="btn btn-danger btn-block" id="btn-delete">刪除行程</button>
 
       <div class="side-drawer-backdrop ${this._drawerOpen ? 'is-open' : ''}" id="side-drawer-backdrop" ${this._drawerOpen ? '' : 'hidden'}></div>
       <aside class="side-drawer side-drawer-75 ${this._drawerOpen ? 'is-open' : ''}" id="side-drawer" aria-label="外部路徑資訊選單">
@@ -173,7 +173,7 @@ export class EventDetailView {
             <div class="side-drawer-heading">路徑資訊與設定</div>
             <div class="card-sub">僅顯示與編輯目前路徑資訊</div>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm side-drawer-close" id="btn-close-drawer" title="隱藏側邊選單">✕ 隱藏</button>
+          <button type="button" class="btn btn-ghost btn-sm side-drawer-close" id="btn-close-drawer" title="隱藏側邊選單">隱藏</button>
         </div>
 
         <div class="drawer-highlight-banner">
@@ -188,25 +188,25 @@ export class EventDetailView {
           <div class="drawer-info-top">
             <div class="drawer-path-title">${this._esc(event.title)}</div>
             <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-edit-details">
-              ${this._editingDetails ? '取消編輯' : '✏️ 編輯資訊'}
+              ${this._editingDetails ? '取消編輯' : '編輯資訊'}
             </button>
           </div>
 
           <div class="drawer-kv-list" id="drawer-read-view" ${this._editingDetails ? 'hidden' : ''}>
             <div class="drawer-kv-item">
-              <span class="drawer-kv-k">🚩 出發起點（固定）</span>
+              <span class="drawer-kv-k">ORIGIN · 出發起點（固定）</span>
               <span class="drawer-kv-v">${this._esc(event.origin?.name || '未設定起點')}</span>
             </div>
             <div class="drawer-kv-item">
-              <span class="drawer-kv-k">📍 目的地（固定）</span>
+              <span class="drawer-kv-k">DEST · 目的地（固定）</span>
               <span class="drawer-kv-v">${this._esc(event.destination.name)}</span>
             </div>
             <div class="drawer-kv-item">
-              <span class="drawer-kv-k">🎯 目標到達</span>
+              <span class="drawer-kv-k">ETA · 目標到達</span>
               <span class="drawer-kv-v">${dateFmt(event.targetArrival)}</span>
             </div>
             <div class="drawer-kv-item">
-              <span class="drawer-kv-k">🛣️ 路徑摘要</span>
+              <span class="drawer-kv-k">ROUTE · 路徑摘要</span>
               <span class="drawer-kv-v">${this._esc(activeIt?.summary || '—')}</span>
             </div>
           </div>
@@ -217,18 +217,18 @@ export class EventDetailView {
               <input id="edit-ev-title" type="text" value="${this._esc(event.title)}" />
             </div>
             <div class="drawer-kv-item drawer-kv-readonly">
-              <span class="drawer-kv-k">🚩 出發起點（不可修改）</span>
+              <span class="drawer-kv-k">ORIGIN · 出發起點（不可修改）</span>
               <span class="drawer-kv-v">${this._esc(event.origin?.name || '未設定起點')}</span>
             </div>
             <div class="drawer-kv-item drawer-kv-readonly">
-              <span class="drawer-kv-k">📍 目的地（不可修改）</span>
+              <span class="drawer-kv-k">DEST · 目的地（不可修改）</span>
               <span class="drawer-kv-v">${this._esc(event.destination.name)}</span>
             </div>
             <div class="drawer-form-field">
               <label for="edit-ev-time">目標到達時間</label>
               <input id="edit-ev-time" type="datetime-local" value="${localArrivalVal}" />
             </div>
-            <button type="button" class="btn btn-primary btn-block" id="btn-save-details">💾 儲存資訊</button>
+            <button type="button" class="btn btn-primary btn-block" id="btn-save-details">儲存資訊</button>
           </div>
         </div>
       </aside>
@@ -318,7 +318,7 @@ export class EventDetailView {
       const formEl = root.querySelector('#drawer-edit-form');
       if (readEl) readEl.hidden = this._editingDetails;
       if (formEl) formEl.hidden = !this._editingDetails;
-      e.currentTarget.textContent = this._editingDetails ? '取消編輯' : '✏️ 編輯資訊';
+      e.currentTarget.textContent = this._editingDetails ? '取消編輯' : '編輯資訊';
     });
 
     root.querySelector('#btn-save-details')?.addEventListener('click', async (e) => {
@@ -432,3 +432,4 @@ export class EventDetailView {
     );
   }
 }
+//(註：內容由 AI 生成)

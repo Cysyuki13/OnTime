@@ -1,13 +1,17 @@
 import { CONFIG } from '../config.js';
 
 export class NotificationService {
-  constructor() {
+  constructor({ settingsService = null } = {}) {
+    this.settingsService = settingsService;
     this._scheduled = new Map();
     this._capIds = [];
     this._isCapacitor = !!window.Capacitor?.isNativePlatform?.();
   }
 
   async ensurePermission() {
+    if (this.settingsService && this.settingsService.get('notificationsEnabled') === false) {
+      return false;
+    }
     if (this._isCapacitor) {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       const perm = await LocalNotifications.requestPermissions();
@@ -21,6 +25,9 @@ export class NotificationService {
   }
 
   async scheduleForEvent(event) {
+    if (this.settingsService && this.settingsService.get('notificationsEnabled') === false) {
+      return [];
+    }
     const target = event.chosenItinerary ?? event.bestItinerary;
     if (!target?.latestDeparture || !target.notificationsEnabled) return [];
 

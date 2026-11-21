@@ -13,15 +13,28 @@ import { fetchJsonWithCorsFallback } from './CorsFetchService.js';
  * - 始終按最快合理時間排序並推薦最快方案
  */
 export class RoutePlanningService {
-  constructor({ etaService, storage = null, proxyBaseUrl = '/api' }) {
+  constructor({ etaService, storage = null, proxyBaseUrl = '/api', settingsService = null }) {
     this.etaService = etaService;
     this.storage = storage;
     this.proxyBaseUrl = proxyBaseUrl;
+    this.settingsService = settingsService;
 
     this._stopsMap = null;
     this._routeInfoMap = null;
     this._groupedRoutes = null;
     this._mtrGraph = this._buildMtrGraph();
+  }
+
+  _modeEnabled(mode) {
+    if (!this.settingsService) return true;
+    return this.settingsService.isModeEnabled(mode);
+  }
+
+  _walkingSpeedMpm() {
+    if (this.settingsService?.getWalkingSpeedMpm) {
+      return this.settingsService.getWalkingSpeedMpm();
+    }
+    return CONFIG.walkingSpeed;
   }
 
   async plan(origin, destination, { arriveBy = null } = {}) {
@@ -132,7 +145,7 @@ export class RoutePlanningService {
     await this._ensureKmbNetworkLoaded();
 
     // 1. 短距離步行（若距離合理則為可行方案；若過遠則仍列出但標記為不建議）
-    if (directDist <= 1200) {
+    if (this._modeEnabled('walk') && directDist <= 1200) {
       const walkCheck = this._evaluateWalk(safeOrigin, destination, 1200);
       const walkMin = await this._getWalkingMinutes(safeOrigin, destination);
       candidates.push(
@@ -153,60 +166,75 @@ export class RoutePlanningService {
     }
 
     // 2. 港鐵 + 步行方案（包含合理步行與「步行距離過遠／不建議」方案，後者會被拒絕推薦但仍顯示）
-    const originMtrList = this._findNearbyMtrStations(safeOrigin, 1800, 2);
-    const destMtrNearList = this._findNearbyMtrStations(destination, 1200, 2);
-    const destMtrBroadList = this._findNearbyMtrStations(destination, 4500, 2);
+    const originMtrList = this._modeEnabled('mtr')
+      ? this._findNearbyMtrStations(safeOrigin, 1800, 2)
+      : [];
+    const destMtrNearList = this._modeEnabled('mtr')
+      ? this._findNearbyMtrStations(destination, 1200, 2)
+      : [];
+    const destMtrBroadList = this._modeEnabled('mtr')
+      ? this._findNearbyMtrStations(destination, 4500, 2)
+      : [];
 
     const directMtrTargets = destMtrNearList.length ? destMtrNearList : destMtrBroadList;
-    for (const oSt of originMtrList) {
-      for (const dSt of directMtrTargets) {
-        if (oSt.station.code === dSt.station.code) continue;
-        const railPath = this._dijkstraMtr(oSt.station.code, dSt.station.code);
-        if (!railPath) continue;
+    if (this._modeEnabled('mtr')) {
+      for (const oSt of originMtrList) {
+        for (const dSt of directMtrTargets) {
+          if (oSt.station.code === dSt.station.code) continue;
+          const railPath = this._dijkstraMtr(oSt.station.code, dSt.station.code);
+          if (!railPath) continue;
 
-        const walkCheck = this._evaluateWalk(dSt.loc, destination, 950);
-        const mtrSegments = await this._buildMtrSegments(safeOrigin, destination, oSt, dSt, railPath);
-        const transferCount = Math.max(0, railPath.legs.length - 1);
-        const baseLineLabel =
-          transferCount > 0
-            ? `港鐵（${railPath.legs.map((l) => l.lineName).join('→')}）`
-            : `港鐵 ${railPath.legs[0].lineName}`;
+          const walkCheck = this._evaluateWalk(dSt.loc, destination, 950);
+          const mtrSegments = await this._buildMtrSegments(safeOrigin, destination, oSt, dSt, railPath);
+          const transferCount = Math.max(0, railPath.legs.length - 1);
+          const baseLineLabel =
+            transferCount > 0
+              ? `港鐵（${railPath.legs.map((l) => l.lineName).join('→')}）`
+              : `港鐵 ${railPath.legs[0].lineName}`;
 
+          candidates.push(
+            new Itinerary({
+              label: walkCheck.feasible
+                ? `${baseLineLabel} + 步行`
+                : `${baseLineLabel} + 步行（已拒絕·步行過遠）`,
+              isImpracticalWalk: !walkCheck.feasible,
+              impracticalReason: walkCheck.reason,
+              segments: mtrSegments,
+            })
+          );
+        }
+      }
+    }
+
+    // 3. 巴士／專線小巴直達路線方案
+    const allowBus = this._modeEnabled('bus');
+    const allowMinibus = this._modeEnabled('minibus');
+    if (allowBus || allowMinibus) {
+      const directKmbRoutes = this._findKmbRoutesBetween(safeOrigin, destination, {
+        maxOriginDist: 1200,
+        maxDestDist: 1000,
+        limit: 3,
+      }).filter((kmb) => (kmb.mode === 'minibus' ? allowMinibus : allowBus));
+
+      for (const kmb of directKmbRoutes) {
+        const segs = await this._buildKmbSegments(safeOrigin, destination, kmb);
+        const modePrefix = kmb.mode === 'minibus' ? '專線小巴' : '九巴';
         candidates.push(
           new Itinerary({
-            label: walkCheck.feasible
-              ? `${baseLineLabel} + 步行`
-              : `${baseLineLabel} + 步行（已拒絕·步行過遠）`,
-            isImpracticalWalk: !walkCheck.feasible,
-            impracticalReason: walkCheck.reason,
-            segments: mtrSegments,
+            label: `${modePrefix} ${kmb.route}${kmb.destTc ? `（往${kmb.destTc}）` : ''}`,
+            segments: segs,
           })
         );
       }
     }
 
-    // 3. 巴士／專線小巴直達路線方案
-    const directKmbRoutes = this._findKmbRoutesBetween(safeOrigin, destination, {
-      maxOriginDist: 1200,
-      maxDestDist: 1000,
-      limit: 3,
-    });
-
-    for (const kmb of directKmbRoutes) {
-      const segs = await this._buildKmbSegments(safeOrigin, destination, kmb);
-      const modePrefix = kmb.mode === 'minibus' ? '專線小巴' : '九巴';
-      candidates.push(
-        new Itinerary({
-          label: `${modePrefix} ${kmb.route}${kmb.destTc ? `（往${kmb.destTc}）` : ''}`,
-          segments: segs,
-        })
-      );
-    }
-
     // 4. 港鐵 + 專線小巴 / 港鐵 + 九巴 / 跨站多模式接駁（至少產生多條可比較方案，涵蓋 MTR+小巴、MTR+巴士等）
-    const hubSearchList = this._findNearbyMtrStations(destination, 6500, 6);
+    const hubSearchList = this._modeEnabled('mtr')
+      ? this._findNearbyMtrStations(destination, 6500, 6)
+      : [];
     const feederByMode = new Map(); // key: `${mode}:${hubCode}:${route}` -> best candidate
 
+    if (this._modeEnabled('mtr') && (allowBus || allowMinibus)) {
     for (const oSt of originMtrList.slice(0, 2)) {
       for (const hubMtr of hubSearchList) {
         if (oSt.station.code === hubMtr.station.code) continue;
@@ -217,7 +245,7 @@ export class RoutePlanningService {
           maxOriginDist: 1000,
           maxDestDist: 1000,
           limit: 4,
-        });
+        }).filter((f) => (f.mode === 'minibus' ? allowMinibus : allowBus));
 
         for (const feeder of feederCandidates) {
           if (!this._isWalkingFeasible(hubMtr.loc, feeder.boardStop.loc, 800)) continue;
@@ -304,15 +332,16 @@ export class RoutePlanningService {
         })
       );
     }
+    } // end mtr + feeder modes
 
     // 5. 若可行方案仍少於 3 條，補充其他合理接駁／巴士方案（如 巴士 + 步行 或 小巴 + 步行）
     const practicalCount = candidates.filter((c) => !c.isImpracticalWalk).length;
-    if (practicalCount < 3) {
+    if (practicalCount < 3 && (allowBus || allowMinibus)) {
       const altRoutes = this._findKmbRoutesBetween(safeOrigin, destination, {
         maxOriginDist: 2200,
         maxDestDist: 1500,
         limit: 4,
-      });
+      }).filter((alt) => (alt.mode === 'minibus' ? allowMinibus : allowBus));
       for (const alt of altRoutes) {
         if (candidates.filter((c) => !c.isImpracticalWalk).length >= 3) break;
         const segs = await this._buildKmbSegments(safeOrigin, destination, alt);
@@ -327,7 +356,9 @@ export class RoutePlanningService {
     }
 
     // 6. 巴士／小巴轉乘方案（覆蓋無直達或需轉乘之任意起訖點）
-    const busXfer = this._findBusToBusTransfer(safeOrigin, destination);
+    const busXfer = (allowBus || allowMinibus)
+      ? this._findBusToBusTransfer(safeOrigin, destination)
+      : null;
     if (busXfer) {
       const w1 = await this._getWalkingMinutes(safeOrigin, busXfer.first.boardStop.loc);
       const b1Min = this._estimateBusLegMinutes(busXfer.first);
@@ -971,7 +1002,7 @@ export class RoutePlanningService {
       // 超時時回退
     }
 
-    return Math.max(1, Math.ceil((dist * 1.25) / CONFIG.walkingSpeed));
+    return Math.max(1, Math.ceil((dist * 1.25) / this._walkingSpeedMpm()));
   }
 
   _findNearbyMtrStations(loc, maxDist = 1600, limit = 2) {

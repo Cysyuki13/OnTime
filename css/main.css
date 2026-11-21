@@ -1,60 +1,148 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --bg: #0b1120;
-  --bg-2: #111827;
-  --card: #151f32;
-  --card-2: #1e293b;
-  --card-hover: #243249;
-  --text: #f1f5f9;
-  --text-dim: #94a3b8;
-  --accent: #38bdf8;
-  --accent-soft: rgba(56, 189, 248, 0.14);
-  --danger: #f87171;
-  --danger-soft: rgba(248, 113, 113, 0.14);
-  --success: #4ade80;
-  --success-soft: rgba(74, 222, 128, 0.14);
-  --warning: #fbbf24;
-  --warning-soft: rgba(251, 191, 36, 0.14);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.45);
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  /* Terminal / engineer-workbench palette */
+  --bg: #131415;
+  --panel: #1a1b1d;
+  --panel-2: #202123;
+  --line: #2c2d30;
+  --line-strong: #404144;
+  --text: #e6e7e8;
+  --text-dim: #8b8d90;
+  --text-faint: #5f6164;
+  --accent: #d8a24a;
+  --accent-dim: rgba(216, 162, 74, 0.13);
+  --danger: #c2564a;
+  --ok: #86a06f;
+  --warn: #d8a24a;
+
+  /* Legacy aliases (kept so existing selectors keep resolving) */
+  --bg-2: #1a1b1d;
+  --card: #1a1b1d;
+  --card-2: #202123;
+  --card-hover: #252628;
+  --text-dim-alias: #8b8d90;
+  --accent-soft: rgba(216, 162, 74, 0.13);
+  --danger-soft: rgba(194, 86, 74, 0.13);
+  --success: #86a06f;
+  --success-soft: rgba(134, 160, 111, 0.13);
+  --warning: #d8a24a;
+  --warning-soft: rgba(216, 162, 74, 0.13);
+  --border: #2c2d30;
+  --border-strong: #404144;
+  --radius-lg: 0;
+  --radius-md: 0;
+  --radius-sm: 0;
+
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK TC", "Noto Sans Mono CJK TC", monospace;
 }
+
 html, body { min-height: 100%; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans HK", sans-serif;
-  background: radial-gradient(circle at top, #132038 0%, var(--bg) 52%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans HK", "Noto Sans TC", sans-serif;
+  background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
   line-height: 1.45;
 }
+
+/* Header: plain terminal status bar, no frosted glass */
 .app-header {
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--border);
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
   position: sticky; top: 0;
-  background: rgba(11, 17, 32, 0.88);
-  backdrop-filter: blur(12px);
+  background: var(--bg);
   z-index: 20;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-.app-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-main { padding: 16px; max-width: 680px; margin: 0 auto; }
+.app-header h1 {
+  font-size: 15px; font-weight: 700; letter-spacing: 0.02em;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.app-sub {
+  font-family: var(--mono);
+  font-size: 10.5px; color: var(--text-faint); margin-top: 2px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+main { padding: 14px; max-width: 640px; margin: 0 auto; }
 
 label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.02em;
+  display: block; font-size: 11.5px; font-weight: 600;
+  color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.03em;
+  font-family: var(--mono);
+  text-transform: uppercase;
 }
+
 input, select, textarea {
-  width: 100%; padding: 11px 14px; border-radius: var(--radius-md);
-  border: 1px solid var(--border); background: var(--bg-2); color: var(--text);
+  width: 100%; padding: 9px 11px; border-radius: 0;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
   font-size: 14px; font-family: inherit;
-  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  transition: border-color .12s ease, background .12s ease;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+  box-shadow: none;
 }
+input::placeholder, textarea::placeholder { color: var(--text-faint); }
+
+/* Mono numerals everywhere a time/code appears */
+.card-total-time,
+.segment-time,
+.endpoint-time,
+.drawer-highlight-time,
+.metric-value,
+.autocomplete-sub,
+.hk-map-title,
+.hk-walkthrough-status {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Light theme (data-theme="light") ---- */
+html[data-theme="light"] {
+  --bg: #f4f4f2;
+  --panel: #ffffff;
+  --panel-2: #f0f0ee;
+  --line: #d8d9db;
+  --line-strong: #b0b2b5;
+  --text: #1c1d1f;
+  --text-dim: #5c5e62;
+  --text-faint: #8a8c90;
+  --bg-2: #ffffff;
+  --card: #ffffff;
+  --card-2: #f0f0ee;
+  --card-hover: #eaeae8;
+  --border: #d8d9db;
+  --border-strong: #b0b2b5;
+  --danger-soft: rgba(194, 86, 74, 0.12);
+  --success-soft: rgba(134, 160, 111, 0.14);
+  --warning-soft: rgba(216, 162, 74, 0.14);
+}
+
+html[data-theme="light"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+html[data-theme="light"] .app-header {
+  background: var(--bg);
+  border-bottom-color: var(--line);
+}
+
+/* List top actions */
+.list-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.settings-entry-btn {
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+
+/* (註：內容由 AI 生成) */

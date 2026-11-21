@@ -1,14 +1,24 @@
 export class EventListView {
-  constructor({ onAdd, onSelect }) {
+  constructor({ onAdd, onSelect, onOpenSettings }) {
     this.onAdd = onAdd;
     this.onSelect = onSelect;
+    this.onOpenSettings = onOpenSettings;
   }
 
   render(events) {
+    const settingsBtn = `
+      <button type="button" class="btn btn-ghost btn-sm settings-entry-btn" id="btn-settings" title="設定">
+        ⚙ 設定
+      </button>
+    `;
+
     if (!events.length) {
       return `
+        <div class="list-top-actions">
+          ${settingsBtn}
+        </div>
         <div class="empty">
-          <span class="empty-icon">📅</span>
+          <span class="empty-icon">[ NO_EVENTS ]</span>
           還沒有行程<br/>點下面按鈕建立第一個
         </div>
         <button type="button" class="btn btn-primary btn-block" id="btn-add">＋ 新增行程</button>
@@ -36,16 +46,16 @@ export class EventListView {
           <div class="divider"></div>
           <div class="row">
             <div class="metric-box">
-              <div class="text-dim" style="font-size:11px">總需時間</div>
-              <div style="font-weight:700;color:var(--success)">${totalMinText}</div>
+              <div class="metric-label">總需時間</div>
+              <div class="metric-value metric-value--ok">${totalMinText}</div>
             </div>
             <div class="metric-box">
-              <div class="text-dim" style="font-size:11px">目標到達</div>
-              <div style="font-weight:600">${target}</div>
+              <div class="metric-label">目標到達</div>
+              <div class="metric-value">${target}</div>
             </div>
             <div class="metric-box">
-              <div class="text-dim" style="font-size:11px">最遲出發</div>
-              <div style="font-weight:700;color:var(--accent)">${lateStr}</div>
+              <div class="metric-label">最遲出發</div>
+              <div class="metric-value metric-value--accent">${lateStr}</div>
             </div>
           </div>
         </div>
@@ -53,6 +63,9 @@ export class EventListView {
     }).join('');
 
     return `
+      <div class="list-top-actions">
+        ${settingsBtn}
+      </div>
       ${cards}
       <button type="button" class="btn btn-primary btn-block" id="btn-add">＋ 新增行程</button>
     `;
@@ -60,6 +73,7 @@ export class EventListView {
 
   bind(root) {
     root.querySelector('#btn-add')?.addEventListener('click', () => this.onAdd());
+    root.querySelector('#btn-settings')?.addEventListener('click', () => this.onOpenSettings?.());
     root.querySelectorAll('[data-event-id]').forEach((el) => {
       el.addEventListener('click', () => this.onSelect(el.dataset.eventId));
     });

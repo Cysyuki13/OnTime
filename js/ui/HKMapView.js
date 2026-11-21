@@ -12,11 +12,11 @@ import {
 import { fetchJsonWithCorsFallback } from '../services/CorsFetchService.js';
 
 const MODE_STROKE = {
-  walk: '#38bdf8',
-  mtr: '#a855f7',
-  bus: '#f59e0b',
-  minibus: '#10b981',
-  ferry: '#06b6d4',
+  walk: '#c8c9cb',
+  mtr: '#d8a24a',
+  bus: '#d0834f',
+  minibus: '#86a06f',
+  ferry: '#7fa8b8',
 };
 
 export class HKMapView {
@@ -45,6 +45,10 @@ export class HKMapView {
     this._isDragging = false;
     this._dragStart = null;
     this._dragMoved = false;
+
+    /** @type {Map<number, {x:number,y:number}>} */
+    this._activePointers = new Map();
+    this._pinchState = null; // { dist, zoom, centerLatLng, midX, midY }
 
     this._pageRoot = null;
     this._root = null;
@@ -114,7 +118,7 @@ export class HKMapView {
       <div class="map-brief-panel ${this._isOpen ? 'is-expanded' : ''}" data-map-brief-panel role="button" tabindex="0" aria-expanded="${this._isOpen}">
         <div class="map-brief-left">
           <div class="map-brief-badge-row">
-            <span class="map-brief-pill">🗺️ 路線地圖可用</span>
+            <span class="map-brief-pill">路線地圖可用</span>
             <span class="map-brief-cta">${badgeText}</span>
           </div>
           <div class="map-brief-route">${this._esc(originName)} → ${this._esc(destName)}${legCount ? ` · 共 ${legCount} 段` : ''}</div>
@@ -140,11 +144,11 @@ export class HKMapView {
     }
     const ctx = mini.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#081222';
+    ctx.fillStyle = '#151618';
     ctx.fillRect(0, 0, w, h);
 
     // Subtle grid
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
+    ctx.strokeStyle = '#232426';
     ctx.lineWidth = 1;
     for (let x = 16; x < w; x += 24) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -157,17 +161,17 @@ export class HKMapView {
     ctx.beginPath();
     ctx.moveTo(16, h - 14);
     ctx.quadraticCurveTo(w * 0.48, 10, w - 18, 16);
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#d8a24a';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'square';
     ctx.stroke();
 
-    // Start & End dots
-    ctx.beginPath(); ctx.arc(16, h - 14, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#4ade80'; ctx.fill();
+    // Start & End squares
+    ctx.fillStyle = '#d8a24a';
+    ctx.fillRect(12, h - 18, 8, 8);
 
-    ctx.beginPath(); ctx.arc(w - 18, 16, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#f87171'; ctx.fill();
+    ctx.fillStyle = '#c2564a';
+    ctx.fillRect(w - 22, 12, 8, 8);
   }
 
   _esc(s) {
@@ -187,7 +191,6 @@ export class HKMapView {
           : '開啟路線地圖');
     return `
       <button type="button" class="btn btn-ghost btn-sm hk-map-trigger-btn ${this._isOpen ? 'is-open' : ''}" data-map-toggle aria-expanded="${this._isOpen}">
-        <span class="hk-map-icon-glyph" aria-hidden="true">🗺️</span>
         <span>${text}</span>
       </button>
     `;
@@ -198,21 +201,21 @@ export class HKMapView {
       this.mode === 'picker'
         ? `
           <div class="hk-map-toolbar">
-            <span class="hk-map-title">🗺️ 香港互動地圖點選</span>
+            <span class="hk-map-title">香港互動地圖點選</span>
             <div class="hk-map-target-switch" role="group" aria-label="地圖點選目標">
-              <button type="button" class="hk-map-pill" data-map-target="origin">🚩 設為起點</button>
-              <button type="button" class="hk-map-pill is-active" data-map-target="dest">📍 設為目的地</button>
+              <button type="button" class="hk-map-pill" data-map-target="origin">設為起點</button>
+              <button type="button" class="hk-map-pill is-active" data-map-target="dest">設為目的地</button>
             </div>
           </div>
         `
         : `
           <div class="hk-map-toolbar">
-            <span class="hk-map-title">🗺️ 香港路線全覽與逐步導航路徑</span>
+            <span class="hk-map-title">香港路線全覽與逐步導航路徑</span>
             <div class="hk-map-legend">
-              <span class="hk-leg-item"><i style="background:#38bdf8"></i>步行</span>
-              <span class="hk-leg-item"><i style="background:#a855f7"></i>港鐵</span>
-              <span class="hk-leg-item"><i style="background:#f59e0b"></i>巴士</span>
-              <span class="hk-leg-item"><i style="background:#10b981"></i>小巴</span>
+              <span class="hk-leg-item"><i style="background:#c8c9cb"></i>步行</span>
+              <span class="hk-leg-item"><i style="background:#d8a24a"></i>港鐵</span>
+              <span class="hk-leg-item"><i style="background:#d0834f"></i>巴士</span>
+              <span class="hk-leg-item"><i style="background:#86a06f"></i>小巴</span>
             </div>
           </div>
         `;
@@ -221,9 +224,9 @@ export class HKMapView {
       this.mode === 'route'
         ? `
           <div class="hk-map-walkthrough" data-map-walkthrough>
-            <button type="button" class="btn btn-ghost btn-sm" data-walk-prev>◀ 上一段</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-walk-prev>◂ 上一段</button>
             <div class="hk-walkthrough-status" data-walk-status>全路線總覽（點選下方分段可逐段高亮）</div>
-            <button type="button" class="btn btn-ghost btn-sm" data-walk-next>下一段 ▶</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-walk-next>下一段 ▸</button>
           </div>
         `
         : '';
@@ -235,13 +238,13 @@ export class HKMapView {
           <div class="hk-map-viewport" style="height:${this.height}px">
             <canvas class="hk-map-canvas"></canvas>
             <div class="hk-map-controls">
-              <button type="button" class="hk-map-ctrl-btn" data-map-fullscreen title="${this._isFullscreen ? '退出全螢幕' : '全螢幕放大地圖'}">${this._isFullscreen ? '✕' : '⛶'}</button>
-              <button type="button" class="hk-map-ctrl-btn" data-map-zoom="in" title="放大">＋</button>
-              <button type="button" class="hk-map-ctrl-btn" data-map-zoom="out" title="縮小">－</button>
-              <button type="button" class="hk-map-ctrl-btn" data-map-reset title="重設視角">⌖</button>
+              <button type="button" class="hk-map-ctrl-btn" data-map-fullscreen title="${this._isFullscreen ? '退出全螢幕' : '全螢幕放大地圖'}">${this._isFullscreen ? 'X' : '□'}</button>
+              <button type="button" class="hk-map-ctrl-btn" data-map-zoom="in" title="放大">+</button>
+              <button type="button" class="hk-map-ctrl-btn" data-map-zoom="out" title="縮小">-</button>
+              <button type="button" class="hk-map-ctrl-btn" data-map-reset title="重設視角">R</button>
             </div>
             <div class="hk-map-hint" data-map-hint>
-              ${this.mode === 'picker' ? '點擊地圖標籤或任意香港位置即可選取座標 · 拖曳平移 / 滾輪縮放' : '拖曳平移 / 滾輪縮放 · 高亮顯示完整轉乘與步行路徑'}
+              ${this.mode === 'picker' ? '點擊地圖標籤或任意位置選取座標 · 單指拖曳平移 · 雙指捏合縮放' : '單指拖曳平移 · 雙指捏合縮放 · 高亮顯示完整轉乘與步行路徑'}
             </div>
           </div>
           ${walkthroughBar}
@@ -329,17 +332,41 @@ export class HKMapView {
       this.setActiveStep(next);
     });
 
-    this._canvas.addEventListener('pointerdown', (e) => {
-      this._isDragging = true;
-      this._dragMoved = false;
-      this._dragStart = { x: e.clientX, y: e.clientY, center: { ...this._center } };
-      this._canvas.setPointerCapture(e.pointerId);
-    });
+    const onPointerDown = (e) => {
+      // Ignore non-primary mouse buttons
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    this._canvas.addEventListener('pointermove', (e) => {
+      this._activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try {
+        this._canvas.setPointerCapture(e.pointerId);
+      } catch (_) { /* ignore */ }
+
+      if (this._activePointers.size === 1) {
+        this._isDragging = true;
+        this._dragMoved = false;
+        this._dragStart = { x: e.clientX, y: e.clientY, center: { ...this._center } };
+        this._pinchState = null;
+      } else if (this._activePointers.size === 2) {
+        // Switch from pan to pinch
+        this._isDragging = false;
+        this._dragStart = null;
+        this._dragMoved = true; // prevent accidental click on lift
+        this._initPinchState();
+      }
+    };
+
+    const onPointerMove = (e) => {
+      if (!this._activePointers.has(e.pointerId)) return;
+      this._activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
       const rect = this._canvas.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+
+      if (this._activePointers.size >= 2 && this._pinchState) {
+        this._handlePinchMove();
+        return;
+      }
 
       if (this._isDragging && this._dragStart) {
         const dx = e.clientX - this._dragStart.x;
@@ -353,21 +380,56 @@ export class HKMapView {
         return;
       }
 
-      const hit = this._hitTestLabel(px, py);
-      this._hoveredLabel = hit;
-      this._canvas.style.cursor = hit ? 'pointer' : this.mode === 'picker' ? 'crosshair' : 'grab';
-    });
+      // Hover only for mouse / single pointer
+      if (this._activePointers.size <= 1) {
+        const hit = this._hitTestLabel(px, py);
+        this._hoveredLabel = hit;
+        this._canvas.style.cursor = hit ? 'pointer' : this.mode === 'picker' ? 'crosshair' : 'grab';
+      }
+    };
 
-    this._canvas.addEventListener('pointerup', (e) => {
-      if (!this._isDragging) return;
-      this._isDragging = false;
-      this._canvas.releasePointerCapture(e.pointerId);
+    const onPointerUp = (e) => {
+      const wasPinching = this._activePointers.size >= 2;
+      this._activePointers.delete(e.pointerId);
+      try {
+        this._canvas.releasePointerCapture(e.pointerId);
+      } catch (_) { /* ignore */ }
 
-      if (!this._dragMoved && this.mode === 'picker') {
-        const rect = this._canvas.getBoundingClientRect();
-        const px = e.clientX - rect.left;
-        const py = e.clientY - rect.top;
-        this._handleMapClick(px, py);
+      if (this._activePointers.size === 0) {
+        const didMove = this._dragMoved || wasPinching;
+        this._isDragging = false;
+        this._dragStart = null;
+        this._pinchState = null;
+
+        // Tap-to-pick when the gesture was a pure click/tap (no drag or pinch)
+        if (!didMove && this.mode === 'picker') {
+          const rect = this._canvas.getBoundingClientRect();
+          const px = e.clientX - rect.left;
+          const py = e.clientY - rect.top;
+          this._handleMapClick(px, py);
+        }
+        this._dragMoved = false;
+      } else if (this._activePointers.size === 1) {
+        // Transition from pinch back to single-finger pan
+        this._pinchState = null;
+        const remaining = this._activePointers.values().next().value;
+        this._isDragging = true;
+        this._dragMoved = true;
+        this._dragStart = {
+          x: remaining.x,
+          y: remaining.y,
+          center: { ...this._center },
+        };
+      }
+    };
+
+    this._canvas.addEventListener('pointerdown', onPointerDown);
+    this._canvas.addEventListener('pointermove', onPointerMove);
+    this._canvas.addEventListener('pointerup', onPointerUp);
+    this._canvas.addEventListener('pointercancel', onPointerUp);
+    this._canvas.addEventListener('lostpointercapture', (e) => {
+      if (this._activePointers.has(e.pointerId)) {
+        onPointerUp(e);
       }
     });
 
@@ -375,9 +437,26 @@ export class HKMapView {
       'wheel',
       (e) => {
         e.preventDefault();
+        const rect = this._canvas.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
         const delta = e.deltaY < 0 ? 0.55 : -0.55;
-        this._setZoom(this._zoom + delta);
+        this._zoomAroundPoint(px, py, this._zoom + delta);
       },
+      { passive: false }
+    );
+
+    // Prevent browser page zoom / scroll interference while interacting with map
+    this._canvas.addEventListener(
+      'touchstart',
+      (e) => {
+        if (e.touches.length >= 2) e.preventDefault();
+      },
+      { passive: false }
+    );
+    this._canvas.addEventListener(
+      'gesturestart',
+      (e) => e.preventDefault(),
       { passive: false }
     );
 
@@ -423,7 +502,7 @@ export class HKMapView {
     document.body.classList.toggle('hk-map-fullscreen-lock', this._isFullscreen);
     const fsBtn = this._root?.querySelector('[data-map-fullscreen]');
     if (fsBtn) {
-      fsBtn.textContent = this._isFullscreen ? '✕' : '⛶';
+      fsBtn.textContent = this._isFullscreen ? 'X' : '□';
       fsBtn.title = this._isFullscreen ? '退出全螢幕' : '全螢幕放大地圖';
     }
     requestAnimationFrame(() => this._resizeCanvas());
@@ -540,7 +619,7 @@ export class HKMapView {
       return;
     }
     const seg = segs[this._activeStepIndex];
-    const meta = ModeMeta[seg.mode] || { icon: '➡️', label: seg.mode };
+    const meta = ModeMeta[seg.mode] || { icon: '·', label: seg.mode };
     const title = seg.route ? `${meta.label} ${seg.route}` : meta.label;
     statusEl.textContent = `第 ${this._activeStepIndex + 1}/${segs.length} 段：${meta.icon} ${title}（${seg.duration} 分鐘）`;
   }
@@ -662,6 +741,74 @@ export class HKMapView {
     this._zoom = Math.min(HK_MAP_BOUNDS.maxZoom, Math.max(HK_MAP_BOUNDS.minZoom, z));
   }
 
+  /**
+   * Zoom while keeping the given screen point (px, py) fixed in geographic space.
+   * Used by mouse-wheel and pinch gestures for natural feel on mobile.
+   */
+  _zoomAroundPoint(px, py, nextZoom) {
+    const before = this._screenToLatLng(px, py);
+    this._setZoom(nextZoom);
+    const after = this._screenToLatLng(px, py);
+    // Shift center so the geographic point under the cursor/pinch midpoint stays put
+    const nextLat = this._center.lat + (before.lat - after.lat);
+    const nextLng = this._center.lng + (before.lng - after.lng);
+    this._center = this._clampHongKongCenter(nextLat, nextLng);
+  }
+
+  _getPinchMetrics() {
+    const pts = [...this._activePointers.values()];
+    if (pts.length < 2) return null;
+    const [a, b] = pts;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    return { midX, midY, dist };
+  }
+
+  _initPinchState() {
+    const m = this._getPinchMetrics();
+    if (!m) {
+      this._pinchState = null;
+      return;
+    }
+    const rect = this._canvas.getBoundingClientRect();
+    const px = m.midX - rect.left;
+    const py = m.midY - rect.top;
+    this._pinchState = {
+      dist: m.dist,
+      zoom: this._zoom,
+      // Geographic point under the initial midpoint – kept fixed during pinch
+      anchorLatLng: this._screenToLatLng(px, py),
+      midX: m.midX,
+      midY: m.midY,
+    };
+  }
+
+  _handlePinchMove() {
+    if (!this._pinchState) return;
+    const m = this._getPinchMetrics();
+    if (!m) return;
+
+    // Scale zoom by the ratio of current finger distance to start distance
+    const ratio = m.dist / this._pinchState.dist;
+    // log2(ratio) maps distance ratio to zoom levels (each zoom level ≈ 2× scale)
+    const nextZoom = this._pinchState.zoom + Math.log2(Math.max(ratio, 0.01));
+
+    const rect = this._canvas.getBoundingClientRect();
+    const px = m.midX - rect.left;
+    const py = m.midY - rect.top;
+
+    // Set zoom first, then pan so the original geographic anchor stays under the current midpoint
+    this._setZoom(nextZoom);
+    const currentUnderMid = this._screenToLatLng(px, py);
+    const dLat = this._pinchState.anchorLatLng.lat - currentUnderMid.lat;
+    const dLng = this._pinchState.anchorLatLng.lng - currentUnderMid.lng;
+    this._center = this._clampHongKongCenter(
+      this._center.lat + dLat,
+      this._center.lng + dLng
+    );
+  }
+
   _fitRouteBounds() {
     const pts = [];
     if (this._origin?.hasCoords) pts.push([this._origin.lng, this._origin.lat]);
@@ -744,10 +891,10 @@ export class HKMapView {
     const w = this._canvas.clientWidth;
     const h = this._canvas.clientHeight;
 
-    ctx.fillStyle = '#0a1628';
+    ctx.fillStyle = '#151618';
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+    ctx.strokeStyle = '#232426';
     ctx.lineWidth = 1;
     for (let lat = 22.15; lat <= 22.56; lat += 0.05) {
       const p1 = this._latLngToScreen(lat, HK_MAP_BOUNDS.minLng);
@@ -774,9 +921,9 @@ export class HKMapView {
         else ctx.lineTo(pt.x, pt.y);
       });
       ctx.closePath();
-      ctx.fillStyle = '#162338';
+      ctx.fillStyle = '#1e1f21';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
+      ctx.strokeStyle = '#343538';
       ctx.lineWidth = 1.25;
       ctx.stroke();
     }
@@ -827,10 +974,10 @@ export class HKMapView {
     this._drawInteractiveLabels(ctx, w, h);
 
     if (this._origin?.hasCoords) {
-      this._drawPin(ctx, this._origin.lat, this._origin.lng, '#4ade80', 'START');
+      this._drawPin(ctx, this._origin.lat, this._origin.lng, '#d8a24a', 'START');
     }
     if (this._destination?.hasCoords) {
-      this._drawPin(ctx, this._destination.lat, this._destination.lng, '#f87171', 'END');
+      this._drawPin(ctx, this._destination.lat, this._destination.lng, '#c2564a', 'END');
     }
   }
 
@@ -842,7 +989,7 @@ export class HKMapView {
       const pts = this._resolvedLegPaths.get(idx) || this._buildFallbackLegPoints(seg);
       if (pts.length < 2) return;
       const isFocused = !hasStepFocus || this._activeStepIndex === idx;
-      const color = MODE_STROKE[seg.mode] || '#38bdf8';
+      const color = MODE_STROKE[seg.mode] || '#8b8d90';
 
       ctx.save();
       ctx.beginPath();
@@ -852,7 +999,7 @@ export class HKMapView {
         else ctx.lineTo(p.x, p.y);
       });
 
-      ctx.strokeStyle = isFocused ? 'rgba(255, 255, 255, 0.85)' : 'rgba(148, 163, 184, 0.25)';
+      ctx.strokeStyle = isFocused ? 'rgba(230, 231, 232, 0.85)' : 'rgba(148, 163, 184, 0.25)';
       ctx.lineWidth = isFocused ? 7.5 : 4;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -871,7 +1018,7 @@ export class HKMapView {
       const startPt = this._latLngToScreen(pts[0][1], pts[0][0]);
       ctx.beginPath();
       ctx.arc(startPt.x, startPt.y, isFocused ? 5.5 : 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#131415';
       ctx.fill();
       ctx.lineWidth = 2.5;
       ctx.strokeStyle = color;
@@ -907,19 +1054,19 @@ export class HKMapView {
 
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, isHovered ? 4.5 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = item.kind === 'mtr' ? (HK_MTR_LINE_COLORS[item.lineCode] || '#38bdf8') : '#fbbf24';
+      ctx.fillStyle = item.kind === 'mtr' ? (HK_MTR_LINE_COLORS[item.lineCode] || '#8b8d90') : '#5f6164';
       ctx.fill();
 
-      ctx.fillStyle = isHovered ? 'rgba(56, 189, 248, 0.92)' : 'rgba(11, 17, 32, 0.78)';
+      ctx.fillStyle = isHovered ? 'rgba(216, 162, 74, 0.92)' : 'rgba(32, 33, 35, 0.9)';
       ctx.beginPath();
-      ctx.roundRect(box.x, box.y, box.w, box.h, 5);
+      ctx.rect(box.x, box.y, box.w, box.h);
       ctx.fill();
 
-      ctx.strokeStyle = isHovered ? '#ffffff' : 'rgba(148, 163, 184, 0.25)';
+      ctx.strokeStyle = isHovered ? '#d8a24a' : '#404144';
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.fillStyle = isHovered ? '#061324' : '#e2e8f0';
+      ctx.fillStyle = isHovered ? '#061324' : '#e6e7e8';
       ctx.fillText(item.name, box.x + 5, box.y + 13);
     }
   }
@@ -930,25 +1077,28 @@ export class HKMapView {
 
     ctx.beginPath();
     ctx.arc(pt.x, pt.y, pulseR, 0, Math.PI * 2);
-    ctx.fillStyle = color === '#4ade80' ? 'rgba(74, 222, 128, 0.22)' : 'rgba(248, 113, 113, 0.22)';
+    ctx.fillStyle = color === '#d8a24a' ? 'rgba(216, 162, 74, 0.16)' : 'rgba(194, 86, 74, 0.16)';
     ctx.fill();
 
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+    // Square marker head
+    const s = 7;
     ctx.fillStyle = color;
-    ctx.fill();
+    ctx.fillRect(pt.x - s, pt.y - s, s * 2, s * 2);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#0b1120';
-    ctx.stroke();
+    ctx.strokeStyle = '#131415';
+    ctx.strokeRect(pt.x - s, pt.y - s, s * 2, s * 2);
 
-    ctx.font = '700 10px -apple-system, BlinkMacSystemFont, sans-serif';
-    const tw = ctx.measureText(badgeText).width + 10;
-    ctx.fillStyle = color;
+    ctx.font = '700 10px ui-monospace, Menlo, Consolas, monospace';
+    const tw = ctx.measureText(badgeText).width + 12;
+    ctx.fillStyle = '#202123';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(pt.x - tw / 2, pt.y - 24, tw, 15, 4);
+    ctx.rect(pt.x - tw / 2, pt.y - 26, tw, 15);
     ctx.fill();
-    ctx.fillStyle = '#061324';
-    ctx.fillText(badgeText, pt.x - tw / 2 + 5, pt.y - 13);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.fillText(badgeText, pt.x - tw / 2 + 6, pt.y - 15);
   }
 
   _hitTestLabel(px, py) {
@@ -961,3 +1111,4 @@ export class HKMapView {
     return null;
   }
 }
+//(註：內容由 AI 生成)

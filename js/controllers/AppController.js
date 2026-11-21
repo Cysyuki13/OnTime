@@ -3,9 +3,11 @@ import { EventService } from '../services/EventService.js';
 import { NotificationService } from '../services/NotificationService.js';
 import { PlaceAutocompleteService } from '../services/PlaceAutocompleteService.js';
 import { UnifiedTransitEtaService } from '../services/UnifiedTransitEtaService.js';
+import { SettingsService } from '../services/SettingsService.js';
 import { EventListView } from '../ui/EventListView.js';
 import { EventFormView } from '../ui/EventFormView.js';
 import { EventDetailView } from '../ui/EventDetailView.js';
+import { SettingsView } from '../ui/SettingsView.js';
 import { LoadingView } from '../ui/LoadingView.js';
 
 export class AppController {
@@ -13,12 +15,27 @@ export class AppController {
     this.root = root;
 
     const storage = new StorageService();
-    const notificationService = new NotificationService();
+    this.settingsService = new SettingsService(storage);
+    this.settingsService.applyToDocument();
+
+    // React to system theme changes when mode is "system"
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if (this.settingsService.get('themeMode') === 'system') {
+          this.settingsService.applyToDocument();
+        }
+      });
+    }
+
+    const notificationService = new NotificationService({ settingsService: this.settingsService });
     this.autocompleteService = new PlaceAutocompleteService();
     const etaService = new UnifiedTransitEtaService();
 
     this.eventService = new EventService({
-      storage, etaService, notificationService,
+      storage,
+      etaService,
+      notificationService,
+      settingsService: this.settingsService,
     });
     this.notificationService = notificationService;
   }
@@ -38,9 +55,24 @@ export class AppController {
     const view = new EventListView({
       onAdd: () => this._showForm(),
       onSelect: (id) => this._showDetail(id),
+      onOpenSettings: () => this._showSettings(),
     });
     LoadingView.hideDimmer();
     this.root.innerHTML = view.render(this.eventService.list());
+    view.bind(this.root);
+  }
+
+  _showSettings() {
+    const view = new SettingsView({
+      settingsService: this.settingsService,
+      onBack: () => this._showList(),
+      onSave: () => {
+        this.settingsService.applyToDocument();
+        this._showList();
+      },
+    });
+    LoadingView.hideDimmer();
+    this.root.innerHTML = view.render();
     view.bind(this.root);
   }
 

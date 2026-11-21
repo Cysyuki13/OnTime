@@ -4,11 +4,11 @@
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#131415",
+  "theme_color": "#131415",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230f172a'/%3E%3Ctext x='96' y='128' font-size='96' text-anchor='middle'%3E🚇%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%23131415'/%3E%3Crect x='38' y='38' width='116' height='116' fill='none' stroke='%23d8a24a' stroke-width='6'/%3E%3Cpolyline points='62,96 124,96' fill='none' stroke='%23d8a24a' stroke-width='8' stroke-linecap='square' stroke-linejoin='miter'/%3E%3Cpolyline points='102,74 126,96 102,118' fill='none' stroke='%23d8a24a' stroke-width='8' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
