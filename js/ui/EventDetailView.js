@@ -23,6 +23,9 @@ export class EventDetailView {
     this._expandedIds = new Set();
     this._drawerOpen = false;
     this._editingDetails = false;
+    this._filterRailOpen = false;
+    /** @type {Set<string>|null} enabled transport modes for filter; null = all on */
+    this._enabledModes = null;
     this._mapView = new HKMapView({ mode: 'route', height: 280, defaultOpen: false });
   }
 
@@ -48,19 +51,19 @@ export class EventDetailView {
     const activeIt = event.chosenItinerary || event.bestItinerary || event.itineraries[0];
     this._mapView.setEndpoints({ origin: event.origin, destination: event.destination });
 
-    const itCards = event.itineraries
-      .map((it) => {
-        const isChosen = event.chosenItineraryId === it.id;
-        const isShortest = shortestId === it.id;
-        const isOpen = this._expandedIds.has(it.id);
-        const totalStr = it.totalDuration != null ? `約 ${it.totalDuration} 分鐘` : '—';
+    const renderItineraryCard = (it) => {
+      const isChosen = event.chosenItineraryId === it.id;
+      const isShortest = shortestId === it.id;
+      const isOpen = this._expandedIds.has(it.id);
+      const totalStr = it.totalDuration != null ? `約 ${it.totalDuration} 分鐘` : '—';
+      const modesInvolved = this._modesInvolved(it);
 
-        const segmentsHtml = it.segments
-          .map((s, idx) => {
-            const meta = ModeMeta[s.mode];
-            const detail = s.displayDetail;
-            const timeRange = `${fmt(s.departAt)} → ${fmt(s.arriveAt)}`;
-            return `
+      const segmentsHtml = it.segments
+        .map((s, idx) => {
+          const meta = ModeMeta[s.mode] || { icon: '·', label: s.mode };
+          const detail = s.displayDetail;
+          const timeRange = `${fmt(s.departAt)} → ${fmt(s.arriveAt)}`;
+          return `
               <div class="segment" data-seg-idx="${idx}" data-it-id="${it.id}" title="點擊在地圖高亮此段路徑">
                 <div class="segment-icon">${meta.icon}</div>
                 <div class="segment-info">
@@ -70,19 +73,21 @@ export class EventDetailView {
                 <div class="segment-time">${timeRange}</div>
               </div>
             `;
-          })
-          .join('');
+        })
+        .join('');
 
-        const badges = [
-          it.isImpracticalWalk ? '<span class="card-badge danger">已拒絕·步行過遠</span>' : '',
-          !it.isImpracticalWalk && isShortest ? '<span class="card-badge warning">最短時間 · 推薦</span>' : '',
-          isChosen ? '<span class="card-badge success">已選</span>' : '',
-          it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
-        ]
-          .filter(Boolean)
-          .join('');
+      const badges = [
+        it.isImpracticalWalk ? '<span class="card-badge danger">已拒絕·步行過遠</span>' : '',
+        !it.isImpracticalWalk && isShortest ? '<span class="card-badge warning">最短時間 · 推薦</span>' : '',
+        isChosen ? '<span class="card-badge success">已選</span>' : '',
+        it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
+      ]
+        .filter(Boolean)
+        .join('');
 
-        return `
+      const modeIcons = this._renderModeIconStrip(modesInvolved);
+
+      return `
           <div class="card itinerary-card ${isChosen ? 'itinerary-chosen' : ''} ${isOpen ? 'is-expanded' : ''}" data-itinerary-id="${it.id}">
             <div class="itinerary-header" data-action="toggle-expand" data-id="${it.id}" role="button" tabindex="0" aria-expanded="${isOpen}">
               <div class="itinerary-header-main">
@@ -97,10 +102,13 @@ export class EventDetailView {
                   </span>
                 </div>
               </div>
-              <button type="button" class="itinerary-toggle-btn" data-action="toggle-expand" data-id="${it.id}">
-                <span class="toggle-text">${isOpen ? '收合' : '展開詳情'}</span>
-                <span class="itinerary-chevron">▼</span>
-              </button>
+              <div class="itinerary-header-right">
+                ${modeIcons}
+                <button type="button" class="itinerary-toggle-btn" data-action="toggle-expand" data-id="${it.id}">
+                  <span class="toggle-text">${isOpen ? '收合' : '展開詳情'}</span>
+                  <span class="itinerary-chevron">▼</span>
+                </button>
+              </div>
             </div>
 
             <div class="itinerary-body" data-body-for="${it.id}" ${isOpen ? '' : 'hidden'}>
@@ -137,8 +145,50 @@ export class EventDetailView {
             </div>
           </div>
         `;
+    };
+
+    // Mode filter (MTR / BUS / MINIBUS / LRT / WALK) — show path if its modes ⊆ enabled
+    const modeDefs = this._filterModeDefs();
+    if (!this._enabledModes) {
+      this._enabledModes = new Set(modeDefs.map((m) => m.key));
+    }
+    const filteredIts = (event.itineraries || []).filter((it) =>
+      this._itineraryMatchesModeFilter(it, this._enabledModes)
+    );
+    // Still group filtered list by combo for readable sections
+    const groups = this._groupItinerariesByCombo(filteredIts, event.chosenItineraryId);
+    const itCards = groups
+      .map((g) => {
+        const cards = g.items.map(renderItineraryCard).join('');
+        return `
+          <section class="path-category" data-combo="${this._esc(g.key)}">
+            <div class="path-category-header">
+              <span class="path-category-title">${this._esc(g.title)}</span>
+              <span class="path-category-count">${g.items.length}</span>
+            </div>
+            <div class="path-category-list">
+              ${cards}
+            </div>
+          </section>
+        `;
       })
       .join('');
+
+    const modeCounts = this._countByMode(event.itineraries || []);
+    const filterItems = modeDefs
+      .map((m) => {
+        const on = this._enabledModes.has(m.key);
+        const count = modeCounts[m.key] ?? 0;
+        return `
+          <button type="button" class="combo-filter-item ${on ? 'is-on' : ''}" data-action="toggle-mode" data-mode="${m.key}" title="${this._esc(m.label)}">
+            <span class="combo-filter-dot"></span>
+            <span class="combo-filter-label">${m.icon} ${this._esc(m.label)}</span>
+            <span class="combo-filter-count">${count}</span>
+          </button>
+        `;
+      })
+      .join('');
+
 
     const localArrivalVal =
       event.targetArrival instanceof Date && !Number.isNaN(event.targetArrival.getTime())
@@ -148,6 +198,28 @@ export class EventDetailView {
         : '';
 
     return `
+      <div class="detail-layout ${this._filterRailOpen ? 'filter-rail-open' : ''}">
+      <aside class="combo-filter-rail ${this._filterRailOpen ? 'is-open' : ''}" id="combo-filter-rail" aria-label="路徑組合篩選">
+        <button type="button" class="combo-filter-peek" id="btn-toggle-filter-rail" title="篩選路徑組合">
+          <span class="peek-icon">☰</span>
+          <span class="peek-text">方式</span>
+        </button>
+        <div class="combo-filter-panel">
+          <div class="combo-filter-head">
+            <span class="combo-filter-title">交通方式</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-close-filter-rail">收合</button>
+          </div>
+          <div class="combo-filter-actions">
+            <button type="button" class="btn btn-ghost btn-sm" data-action="combo-all">全選</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="combo-none">全關</button>
+          </div>
+          <div class="combo-filter-list">
+            ${filterItems}
+          </div>
+        </div>
+      </aside>
+
+      <div class="detail-main">
       <div class="detail-topbar">
         <button type="button" class="btn btn-ghost btn-sm" id="btn-back">← 返回</button>
         <div class="detail-topbar-actions">
@@ -160,20 +232,27 @@ export class EventDetailView {
         ${this._mapView.render()}
       </div>
 
-      <div class="detail-section-label">路線方案（已選方案預設展開；其餘收合，點按可展開；點擊分段可於地圖高亮）</div>
-      ${itCards}
+      <div class="detail-section-label">路線方案（左側可篩選組合；已選方案預設展開）</div>
+      <div id="path-list-root">${itCards || '<div class="card-sub" style="padding:12px">沒有符合篩選的方案，請在左側開啟組合。</div>'}</div>
 
       <button type="button" class="btn btn-ghost btn-block" id="btn-refresh">重新計算最短時間與班次</button>
       <button type="button" class="btn btn-danger btn-block" id="btn-delete">刪除行程</button>
+      </div><!-- .detail-main -->
+      </div><!-- .detail-layout -->
 
-      <div class="side-drawer-backdrop ${this._drawerOpen ? 'is-open' : ''}" id="side-drawer-backdrop" ${this._drawerOpen ? '' : 'hidden'}></div>
+      <div class="side-drawer-backdrop ${this._drawerOpen ? 'is-open' : ''}" id="side-drawer-backdrop"></div>
+      <div class="path-info-rail ${this._drawerOpen ? 'is-open' : ''}" id="path-info-rail">
+        <button type="button" class="path-info-peek" id="btn-toggle-path-info-peek" title="路徑資訊">
+          <span class="peek-icon">ℹ</span>
+          <span class="peek-text">資訊</span>
+        </button>
       <aside class="side-drawer side-drawer-75 ${this._drawerOpen ? 'is-open' : ''}" id="side-drawer" aria-label="外部路徑資訊選單">
         <div class="side-drawer-head">
           <div class="side-drawer-head-text">
             <div class="side-drawer-heading">路徑資訊與設定</div>
             <div class="card-sub">僅顯示與編輯目前路徑資訊</div>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm side-drawer-close" id="btn-close-drawer" title="隱藏側邊選單">隱藏</button>
+          <button type="button" class="btn btn-ghost btn-sm side-drawer-close" id="btn-close-drawer" title="隱藏側邊選單">收合</button>
         </div>
 
         <div class="drawer-highlight-banner">
@@ -232,19 +311,23 @@ export class EventDetailView {
           </div>
         </div>
       </aside>
+      </div><!-- #path-info-rail -->
     `;
   }
 
   _setDrawerOpen(open) {
     this._drawerOpen = !!open;
     const drawer = this._pageRoot?.querySelector('#side-drawer');
+    const rail = this._pageRoot?.querySelector('#path-info-rail');
     const backdrop = this._pageRoot?.querySelector('#side-drawer-backdrop');
     if (drawer) drawer.classList.toggle('is-open', this._drawerOpen);
+    if (rail) rail.classList.toggle('is-open', this._drawerOpen);
     if (backdrop) {
-      backdrop.hidden = !this._drawerOpen;
+      backdrop.hidden = false;
       backdrop.classList.toggle('is-open', this._drawerOpen);
     }
   }
+
 
   _toggleExpand(root, id) {
     const card = root.querySelector(`.itinerary-card[data-itinerary-id="${id}"]`);
@@ -278,6 +361,7 @@ export class EventDetailView {
   bind(root) {
     this._pageRoot = root;
     this._mapView.bind(root);
+    this._bindComboFilter(root);
     const activeIt = this._event?.chosenItinerary || this._event?.bestItinerary || this._event?.itineraries?.[0];
     if (activeIt) {
       this._mapView.setItinerary(activeIt, {
@@ -300,6 +384,10 @@ export class EventDetailView {
     root.querySelector('#btn-refresh')?.addEventListener('click', () => this.onRefresh());
 
     root.querySelector('#btn-toggle-drawer')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._setDrawerOpen(!this._drawerOpen);
+    });
+    root.querySelector('#btn-toggle-path-info-peek')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this._setDrawerOpen(!this._drawerOpen);
     });
@@ -424,6 +512,227 @@ export class EventDetailView {
         this.onToggleNotification(input.dataset.id, input.checked);
       });
     });
+  }
+
+
+
+  _bindComboFilter(root) {
+    const rail = root.querySelector('#combo-filter-rail');
+    const openRail = (open) => {
+      this._filterRailOpen = open;
+      rail?.classList.toggle('is-open', open);
+      root.querySelector('.detail-layout')?.classList.toggle('filter-rail-open', open);
+    };
+
+    root.querySelector('#btn-toggle-filter-rail')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openRail(!this._filterRailOpen);
+    });
+    root.querySelector('#btn-close-filter-rail')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openRail(false);
+    });
+
+    root.querySelectorAll('[data-action="toggle-mode"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = btn.getAttribute('data-mode');
+        if (!key) return;
+        if (!this._enabledModes) this._enabledModes = new Set();
+        if (this._enabledModes.has(key)) this._enabledModes.delete(key);
+        else this._enabledModes.add(key);
+        this._applyComboFilter(root);
+      });
+    });
+
+    root.querySelector('[data-action="combo-all"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._enabledModes = new Set(this._filterModeDefs().map((m) => m.key));
+      this._applyComboFilter(root);
+    });
+
+    root.querySelector('[data-action="combo-none"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._enabledModes = new Set();
+      this._applyComboFilter(root);
+    });
+  }
+
+  _applyComboFilter(root) {
+    // Re-render detail view in place to keep filter + expand state
+    if (!this._event || !this._pageRoot) return;
+    const parent = this._pageRoot;
+    const html = this.render(this._event);
+    parent.innerHTML = html;
+    this.bind(parent);
+  }
+
+
+  _filterModeDefs() {
+    return [
+      { key: 'mtr', label: '港鐵', icon: '🚇' },
+      { key: 'bus', label: '巴士', icon: '🚌' },
+      { key: 'minibus', label: '小巴', icon: '🚐' },
+      { key: 'lrt', label: '輕鐵', icon: '🚊' },
+      { key: 'walk', label: '步行', icon: '🚶' },
+    ];
+  }
+
+  /**
+   * Show itinerary when every transit mode it uses is enabled.
+   * Walk is always allowed as access for multi-mode trips; pure-walk needs walk ON.
+   */
+  _itineraryMatchesModeFilter(it, enabled) {
+    if (!enabled) return true;
+    const modes = this._modesInvolved(it);
+    const transit = [...modes].filter((m) => m !== 'walk');
+    if (!transit.length) {
+      return enabled.has('walk');
+    }
+    return transit.every((m) => enabled.has(m));
+  }
+
+  /** Count itineraries that involve each mode (for badge numbers). */
+  _countByMode(itineraries) {
+    const counts = { mtr: 0, bus: 0, minibus: 0, lrt: 0, walk: 0 };
+    for (const it of itineraries) {
+      const modes = this._modesInvolved(it);
+      for (const m of Object.keys(counts)) {
+        if (modes.has(m)) counts[m] += 1;
+      }
+    }
+    return counts;
+  }
+
+  _modesInvolved(it) {
+    const set = new Set();
+    for (const s of it?.segments || []) {
+      if (s?.mode) set.add(s.mode);
+    }
+    return set;
+  }
+
+  _renderModeIconStrip(modesInvolved) {
+    // Fixed order strip; lit when involved
+    const order = [
+      { mode: 'mtr', icon: '🚇', title: '港鐵' },
+      { mode: 'bus', icon: '🚌', title: '巴士' },
+      { mode: 'minibus', icon: '🚐', title: '小巴' },
+      { mode: 'lrt', icon: '🚊', title: '輕鐵' },
+      { mode: 'walk', icon: '🚶', title: '步行' },
+    ];
+    const cells = order
+      .map((o) => {
+        const on = modesInvolved.has(o.mode);
+        return `<span class="mode-type-icon ${on ? 'is-on' : 'is-off'}" title="${o.title}${on ? '（本方案使用）' : ''}" data-mode="${o.mode}">${o.icon}</span>`;
+      })
+      .join('');
+    return `<div class="mode-type-strip" aria-label="交通方式">${cells}</div>`;
+  }
+
+  _comboKey(it) {
+    const modes = [];
+    const seen = new Set();
+    for (const s of it?.segments || []) {
+      const m = s?.mode;
+      if (!m || m === 'walk') continue; // walk is access, not a combo pillar
+      if (!seen.has(m)) {
+        seen.add(m);
+        modes.push(m);
+      }
+    }
+    if (!modes.length) {
+      // pure walk (or empty)
+      return it?.isImpracticalWalk ? 'walk-reject' : 'walk';
+    }
+    // stable order
+    const rank = { mtr: 1, lrt: 2, bus: 3, minibus: 4 };
+    modes.sort((a, b) => (rank[a] ?? 9) - (rank[b] ?? 9));
+    return modes.join('+');
+  }
+
+  _comboTitle(key) {
+    const map = {
+      walk: '純步行',
+      'walk-reject': '步行（不建議）',
+      mtr: '港鐵',
+      bus: '巴士',
+      minibus: '小巴',
+      lrt: '輕鐵',
+      'mtr+bus': '港鐵 + 巴士',
+      'mtr+minibus': '港鐵 + 小巴',
+      'mtr+lrt': '港鐵 + 輕鐵',
+      'bus+minibus': '巴士 + 小巴',
+      'mtr+bus+minibus': '港鐵 + 巴士 + 小巴',
+      'mtr+lrt+bus': '港鐵 + 輕鐵 + 巴士',
+    };
+    if (map[key]) return map[key];
+    return key
+      .split('+')
+      .map((m) => ({ mtr: '港鐵', bus: '巴士', minibus: '小巴', lrt: '輕鐵', walk: '步行' }[m] || m))
+      .join(' + ');
+  }
+
+  _groupItinerariesByCombo(itineraries, chosenId) {
+    const order = [
+      'mtr',
+      'mtr+lrt',
+      'mtr+bus',
+      'mtr+minibus',
+      'mtr+bus+minibus',
+      'mtr+lrt+bus',
+      'lrt',
+      'bus',
+      'minibus',
+      'bus+minibus',
+      'walk',
+      'walk-reject',
+    ];
+    const buckets = new Map();
+    for (const it of itineraries || []) {
+      const key = this._comboKey(it);
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(it);
+    }
+    for (const arr of buckets.values()) {
+      arr.sort((a, b) => {
+        const aChosen = chosenId && a.id === chosenId ? 0 : 1;
+        const bChosen = chosenId && b.id === chosenId ? 0 : 1;
+        if (aChosen !== bChosen) return aChosen - bChosen;
+        const aDur = Number.isFinite(a.totalDuration) ? a.totalDuration : Infinity;
+        const bDur = Number.isFinite(b.totalDuration) ? b.totalDuration : Infinity;
+        if (aDur !== bDur) return aDur - bDur;
+        return String(a.label || '').localeCompare(String(b.label || ''), 'zh-HK');
+      });
+    }
+    const keys = [...buckets.keys()].sort((a, b) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      const ra = ia === -1 ? 500 : ia;
+      const rb = ib === -1 ? 500 : ib;
+      if (ra !== rb) return ra - rb;
+      return a.localeCompare(b);
+    });
+    // If chosen exists, move its category to front
+    if (chosenId) {
+      const chosen = (itineraries || []).find((x) => x.id === chosenId);
+      if (chosen) {
+        const ck = this._comboKey(chosen);
+        const idx = keys.indexOf(ck);
+        if (idx > 0) {
+          keys.splice(idx, 1);
+          keys.unshift(ck);
+        }
+      }
+    }
+    return keys.map((key) => ({
+      key,
+      title: this._comboTitle(key),
+      items: buckets.get(key) || [],
+    }));
   }
 
   _esc(s) {

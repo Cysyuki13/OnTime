@@ -1,0 +1,3747 @@
+{
+  "stops": [
+    {
+      "code": "SAS",
+      "stopId": 920,
+      "name_tc": "三聖",
+      "name_en": "Sam Shing",
+      "lat": 22.382,
+      "lng": 113.9785,
+      "mtrCode": null
+    },
+    {
+      "code": "SIL",
+      "stopId": 265,
+      "name_tc": "兆麟",
+      "name_en": "Siu Lun",
+      "lat": 22.3855,
+      "lng": 113.977,
+      "mtrCode": null
+    },
+    {
+      "code": "ONT",
+      "stopId": 270,
+      "name_tc": "安定",
+      "name_en": "On Ting",
+      "lat": 22.3888,
+      "lng": 113.9745,
+      "mtrCode": null
+    },
+    {
+      "code": "TOC",
+      "stopId": 280,
+      "name_tc": "市中心",
+      "name_en": "Town Centre",
+      "lat": 22.3915,
+      "lng": 113.9768,
+      "mtrCode": null
+    },
+    {
+      "code": "TML",
+      "stopId": 295,
+      "name_tc": "屯門",
+      "name_en": "Tuen Mun",
+      "lat": 22.3938,
+      "lng": 113.976,
+      "mtrCode": "TuenMun"
+    },
+    {
+      "code": "KIO",
+      "stopId": 60,
+      "name_tc": "建安",
+      "name_en": "Kin On",
+      "lat": 22.39,
+      "lng": 113.9705,
+      "mtrCode": null
+    },
+    {
+      "code": "SKS",
+      "stopId": 190,
+      "name_tc": "山景(南)",
+      "name_en": "Shan King (South)",
+      "lat": 22.3895,
+      "lng": 113.966,
+      "mtrCode": null
+    },
+    {
+      "code": "SKN",
+      "stopId": 180,
+      "name_tc": "山景(北)",
+      "name_en": "Shan King (North)",
+      "lat": 22.391,
+      "lng": 113.967,
+      "mtrCode": null
+    },
+    {
+      "code": "SHP",
+      "stopId": 170,
+      "name_tc": "石排",
+      "name_en": "Shek Pai",
+      "lat": 22.404,
+      "lng": 113.968,
+      "mtrCode": null
+    },
+    {
+      "code": "SAW",
+      "stopId": 160,
+      "name_tc": "新圍",
+      "name_en": "San Wai",
+      "lat": 22.4065,
+      "lng": 113.969,
+      "mtrCode": null
+    },
+    {
+      "code": "LEK",
+      "stopId": 150,
+      "name_tc": "良景",
+      "name_en": "Leung King",
+      "lat": 22.408,
+      "lng": 113.97,
+      "mtrCode": null
+    },
+    {
+      "code": "TNK",
+      "stopId": 140,
+      "name_tc": "田景",
+      "name_en": "Tin King",
+      "lat": 22.4095,
+      "lng": 113.971,
+      "mtrCode": null
+    },
+    {
+      "code": "KIS",
+      "stopId": 130,
+      "name_tc": "建生",
+      "name_en": "Kin Sang",
+      "lat": 22.4088,
+      "lng": 113.9702,
+      "mtrCode": null
+    },
+    {
+      "code": "CHC",
+      "stopId": 120,
+      "name_tc": "青松",
+      "name_en": "Ching Chung",
+      "lat": 22.411,
+      "lng": 113.974,
+      "mtrCode": null
+    },
+    {
+      "code": "KEL",
+      "stopId": 110,
+      "name_tc": "麒麟",
+      "name_en": "Kei Lun",
+      "lat": 22.4105,
+      "lng": 113.9765,
+      "mtrCode": null
+    },
+    {
+      "code": "SHL",
+      "stopId": 100,
+      "name_tc": "兆康",
+      "name_en": "Siu Hong",
+      "lat": 22.4125,
+      "lng": 113.978,
+      "mtrCode": "SIH"
+    },
+    {
+      "code": "MIK",
+      "stopId": 200,
+      "name_tc": "鳴琴",
+      "name_en": "Ming Kum",
+      "lat": 22.402,
+      "lng": 113.9695,
+      "mtrCode": null
+    },
+    {
+      "code": "FEP",
+      "stopId": 1,
+      "name_tc": "屯門碼頭",
+      "name_en": "Tuen Mun Ferry Pier",
+      "lat": 22.372,
+      "lng": 113.9665,
+      "mtrCode": null
+    },
+    {
+      "code": "SHE",
+      "stopId": 240,
+      "name_tc": "兆禧",
+      "name_en": "Siu Hei",
+      "lat": 22.3735,
+      "lng": 113.97,
+      "mtrCode": null
+    },
+    {
+      "code": "TSP",
+      "stopId": 250,
+      "name_tc": "海皇路",
+      "name_en": "Hoi Wong Road",
+      "lat": 22.3755,
+      "lng": 113.972,
+      "mtrCode": null
+    },
+    {
+      "code": "GOG",
+      "stopId": 260,
+      "name_tc": "豐景園",
+      "name_en": "Goodview Garden",
+      "lat": 22.378,
+      "lng": 113.974,
+      "mtrCode": null
+    },
+    {
+      "code": "HOT",
+      "stopId": 70,
+      "name_tc": "河田",
+      "name_en": "Ho Tin",
+      "lat": 22.3975,
+      "lng": 113.9725,
+      "mtrCode": null
+    },
+    {
+      "code": "CYB",
+      "stopId": 75,
+      "name_tc": "蔡意橋",
+      "name_en": "Choy Yee Bridge",
+      "lat": 22.4005,
+      "lng": 113.9735,
+      "mtrCode": null
+    },
+    {
+      "code": "NGW",
+      "stopId": 230,
+      "name_tc": "銀圍",
+      "name_en": "Ngan Wai",
+      "lat": 22.402,
+      "lng": 113.975,
+      "mtrCode": null
+    },
+    {
+      "code": "THS",
+      "stopId": 220,
+      "name_tc": "大興(南)",
+      "name_en": "Tai Hing (South)",
+      "lat": 22.4045,
+      "lng": 113.976,
+      "mtrCode": null
+    },
+    {
+      "code": "THN",
+      "stopId": 212,
+      "name_tc": "大興(北)",
+      "name_en": "Tai Hing (North)",
+      "lat": 22.406,
+      "lng": 113.977,
+      "mtrCode": null
+    },
+    {
+      "code": "PUT",
+      "stopId": 300,
+      "name_tc": "杯渡",
+      "name_en": "Pui To",
+      "lat": 22.3985,
+      "lng": 113.968,
+      "mtrCode": null
+    },
+    {
+      "code": "FUT",
+      "stopId": 340,
+      "name_tc": "鳳地",
+      "name_en": "Fung Tei",
+      "lat": 22.418,
+      "lng": 113.982,
+      "mtrCode": null
+    },
+    {
+      "code": "TWN",
+      "stopId": 50,
+      "name_tc": "青雲",
+      "name_en": "Tsing Wun",
+      "lat": 22.387,
+      "lng": 113.968,
+      "mtrCode": null
+    },
+    {
+      "code": "TSS",
+      "stopId": 40,
+      "name_tc": "青山村",
+      "name_en": "Tsing Shan Tsuen",
+      "lat": 22.384,
+      "lng": 113.967,
+      "mtrCode": null
+    },
+    {
+      "code": "LUM",
+      "stopId": 30,
+      "name_tc": "龍門",
+      "name_en": "Lung Mun",
+      "lat": 22.381,
+      "lng": 113.9685,
+      "mtrCode": null
+    },
+    {
+      "code": "LRD",
+      "stopId": 20,
+      "name_tc": "輕鐵車廠",
+      "name_en": "Light Rail Depot",
+      "lat": 22.3785,
+      "lng": 113.971,
+      "mtrCode": null
+    },
+    {
+      "code": "BUT",
+      "stopId": 15,
+      "name_tc": "蝴蝶",
+      "name_en": "Butterfly",
+      "lat": 22.3765,
+      "lng": 113.9695,
+      "mtrCode": null
+    },
+    {
+      "code": "MEG",
+      "stopId": 10,
+      "name_tc": "美樂",
+      "name_en": "Melody Garden",
+      "lat": 22.3745,
+      "lng": 113.968,
+      "mtrCode": null
+    },
+    {
+      "code": "AFF",
+      "stopId": 80,
+      "name_tc": "澤豐",
+      "name_en": "Affluence",
+      "lat": 22.4035,
+      "lng": 113.9745,
+      "mtrCode": null
+    },
+    {
+      "code": "TMH",
+      "stopId": 90,
+      "name_tc": "屯門醫院",
+      "name_en": "Tuen Mun Hospital",
+      "lat": 22.4065,
+      "lng": 113.9755,
+      "mtrCode": null
+    },
+    {
+      "code": "LTE",
+      "stopId": 350,
+      "name_tc": "藍地",
+      "name_en": "Lam Tei",
+      "lat": 22.4205,
+      "lng": 113.9845,
+      "mtrCode": null
+    },
+    {
+      "code": "NAW",
+      "stopId": 360,
+      "name_tc": "泥圍",
+      "name_en": "Nai Wai",
+      "lat": 22.425,
+      "lng": 113.99,
+      "mtrCode": null
+    },
+    {
+      "code": "CUT",
+      "stopId": 370,
+      "name_tc": "鍾屋村",
+      "name_en": "Chung Uk Tsuen",
+      "lat": 22.428,
+      "lng": 113.994,
+      "mtrCode": null
+    },
+    {
+      "code": "HSK",
+      "stopId": 380,
+      "name_tc": "洪水橋",
+      "name_en": "Hung Shui Kiu",
+      "lat": 22.4325,
+      "lng": 113.997,
+      "mtrCode": null
+    },
+    {
+      "code": "TOF",
+      "stopId": 390,
+      "name_tc": "塘坊村",
+      "name_en": "Tong Fong Tsuen",
+      "lat": 22.441,
+      "lng": 114.02,
+      "mtrCode": null
+    },
+    {
+      "code": "PIS",
+      "stopId": 400,
+      "name_tc": "屏山",
+      "name_en": "Ping Shan",
+      "lat": 22.4415,
+      "lng": 114.012,
+      "mtrCode": null
+    },
+    {
+      "code": "SPW",
+      "stopId": 560,
+      "name_tc": "水邊圍",
+      "name_en": "Shui Pin Wai",
+      "lat": 22.444,
+      "lng": 114.025,
+      "mtrCode": null
+    },
+    {
+      "code": "FNR",
+      "stopId": 570,
+      "name_tc": "豐年路",
+      "name_en": "Fung Nin Road",
+      "lat": 22.445,
+      "lng": 114.0335,
+      "mtrCode": null
+    },
+    {
+      "code": "HLR",
+      "stopId": 580,
+      "name_tc": "康樂路",
+      "name_en": "Hong Lok Road",
+      "lat": 22.4445,
+      "lng": 114.0315,
+      "mtrCode": null
+    },
+    {
+      "code": "TTR",
+      "stopId": 590,
+      "name_tc": "大棠路",
+      "name_en": "Tai Tong Road",
+      "lat": 22.4435,
+      "lng": 114.0285,
+      "mtrCode": null
+    },
+    {
+      "code": "YLL",
+      "stopId": 600,
+      "name_tc": "元朗",
+      "name_en": "Yuen Long",
+      "lat": 22.4455,
+      "lng": 114.0365,
+      "mtrCode": "YUL"
+    },
+    {
+      "code": "TSL",
+      "stopId": 430,
+      "name_tc": "天水圍",
+      "name_en": "Tin Shui Wai",
+      "lat": 22.448,
+      "lng": 114.0055,
+      "mtrCode": "TIS"
+    },
+    {
+      "code": "TIT",
+      "stopId": 435,
+      "name_tc": "天慈",
+      "name_en": "Tin Tsz",
+      "lat": 22.451,
+      "lng": 114.008,
+      "mtrCode": null
+    },
+    {
+      "code": "TWU",
+      "stopId": 450,
+      "name_tc": "天湖",
+      "name_en": "Tin Wu",
+      "lat": 22.453,
+      "lng": 114.0025,
+      "mtrCode": null
+    },
+    {
+      "code": "GIN",
+      "stopId": 455,
+      "name_tc": "銀座",
+      "name_en": "Ginza",
+      "lat": 22.4585,
+      "lng": 114.005,
+      "mtrCode": null
+    },
+    {
+      "code": "TWI",
+      "stopId": 500,
+      "name_tc": "天榮",
+      "name_en": "Tin Wing",
+      "lat": 22.461,
+      "lng": 114.0065,
+      "mtrCode": null
+    },
+    {
+      "code": "TYU",
+      "stopId": 510,
+      "name_tc": "天悅",
+      "name_en": "Tin Yuet",
+      "lat": 22.462,
+      "lng": 114.0005,
+      "mtrCode": null
+    },
+    {
+      "code": "TSA",
+      "stopId": 520,
+      "name_tc": "天秀",
+      "name_en": "Tin Sau",
+      "lat": 22.4645,
+      "lng": 113.9985,
+      "mtrCode": null
+    },
+    {
+      "code": "WEP",
+      "stopId": 530,
+      "name_tc": "濕地公園",
+      "name_en": "Wetland Park",
+      "lat": 22.4685,
+      "lng": 114.0045,
+      "mtrCode": null
+    },
+    {
+      "code": "THE",
+      "stopId": 540,
+      "name_tc": "天恒",
+      "name_en": "Tin Heng",
+      "lat": 22.4705,
+      "lng": 114.0015,
+      "mtrCode": null
+    },
+    {
+      "code": "TYA",
+      "stopId": 550,
+      "name_tc": "天逸",
+      "name_en": "Tin Yat",
+      "lat": 22.472,
+      "lng": 113.998,
+      "mtrCode": null
+    },
+    {
+      "code": "TFU",
+      "stopId": 480,
+      "name_tc": "天富",
+      "name_en": "Tin Fu",
+      "lat": 22.466,
+      "lng": 114.002,
+      "mtrCode": null
+    },
+    {
+      "code": "TSU",
+      "stopId": 460,
+      "name_tc": "天瑞",
+      "name_en": "Tin Shui",
+      "lat": 22.4565,
+      "lng": 114.0035,
+      "mtrCode": null
+    },
+    {
+      "code": "LOC",
+      "stopId": 448,
+      "name_tc": "樂湖",
+      "name_en": "Locwood",
+      "lat": 22.452,
+      "lng": 114.0045,
+      "mtrCode": null
+    },
+    {
+      "code": "TIY",
+      "stopId": 445,
+      "name_tc": "天耀",
+      "name_en": "Tin Yiu",
+      "lat": 22.4495,
+      "lng": 114.0015,
+      "mtrCode": null
+    },
+    {
+      "code": "YAO",
+      "stopId": 275,
+      "name_tc": "友愛",
+      "name_en": "Yau Oi",
+      "lat": 22.3865,
+      "lng": 113.973,
+      "mtrCode": null
+    },
+    {
+      "code": "HMT",
+      "stopId": 425,
+      "name_tc": "坑尾村",
+      "name_en": "Hang Mei Tsuen",
+      "lat": 22.4405,
+      "lng": 114.0005,
+      "mtrCode": null
+    },
+    {
+      "code": "CHE",
+      "stopId": 490,
+      "name_tc": "翠湖",
+      "name_en": "Chestwood",
+      "lat": 22.4635,
+      "lng": 114.004,
+      "mtrCode": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "SAS",
+      "to": "SIL",
+      "min": 1,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "SIL",
+      "to": "ONT",
+      "min": 2,
+      "routes": [
+        "505",
+        "507",
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "ONT",
+      "to": "TOC",
+      "min": 1,
+      "routes": [
+        "505",
+        "507",
+        "614",
+        "614P",
+        "751"
+      ]
+    },
+    {
+      "from": "TOC",
+      "to": "TML",
+      "min": 1,
+      "routes": [
+        "505",
+        "507",
+        "751"
+      ]
+    },
+    {
+      "from": "TML",
+      "to": "KIO",
+      "min": 3,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "KIO",
+      "to": "SKS",
+      "min": 2,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "SKS",
+      "to": "SKN",
+      "min": 1,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "SKN",
+      "to": "SHP",
+      "min": 5,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "SHP",
+      "to": "SAW",
+      "min": 1,
+      "routes": [
+        "505",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "SAW",
+      "to": "LEK",
+      "min": 1,
+      "routes": [
+        "505",
+        "507",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "LEK",
+      "to": "TNK",
+      "min": 1,
+      "routes": [
+        "505",
+        "507",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "TNK",
+      "to": "KIS",
+      "min": 1,
+      "routes": [
+        "505",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "KIS",
+      "to": "CHC",
+      "min": 2,
+      "routes": [
+        "505",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "CHC",
+      "to": "KEL",
+      "min": 1,
+      "routes": [
+        "505",
+        "615P"
+      ]
+    },
+    {
+      "from": "KEL",
+      "to": "SHL",
+      "min": 1,
+      "routes": [
+        "505",
+        "615P"
+      ]
+    },
+    {
+      "from": "SHL",
+      "to": "CHC",
+      "min": 2,
+      "routes": [
+        "505",
+        "615"
+      ]
+    },
+    {
+      "from": "SHP",
+      "to": "MIK",
+      "min": 1,
+      "routes": [
+        "505",
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "MIK",
+      "to": "KIO",
+      "min": 5,
+      "routes": [
+        "505"
+      ]
+    },
+    {
+      "from": "FEP",
+      "to": "SHE",
+      "min": 1,
+      "routes": [
+        "507",
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "SHE",
+      "to": "TSP",
+      "min": 1,
+      "routes": [
+        "507",
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "TSP",
+      "to": "GOG",
+      "min": 1,
+      "routes": [
+        "507",
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "GOG",
+      "to": "SIL",
+      "min": 3,
+      "routes": [
+        "507",
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "TML",
+      "to": "HOT",
+      "min": 2,
+      "routes": [
+        "507",
+        "751"
+      ]
+    },
+    {
+      "from": "HOT",
+      "to": "CYB",
+      "min": 1,
+      "routes": [
+        "507",
+        "751"
+      ]
+    },
+    {
+      "from": "CYB",
+      "to": "NGW",
+      "min": 1,
+      "routes": [
+        "507"
+      ]
+    },
+    {
+      "from": "NGW",
+      "to": "THS",
+      "min": 1,
+      "routes": [
+        "507",
+        "610"
+      ]
+    },
+    {
+      "from": "THS",
+      "to": "THN",
+      "min": 1,
+      "routes": [
+        "507",
+        "610"
+      ]
+    },
+    {
+      "from": "THN",
+      "to": "SAW",
+      "min": 3,
+      "routes": [
+        "507"
+      ]
+    },
+    {
+      "from": "TNK",
+      "to": "TNK",
+      "min": 1,
+      "routes": [
+        "507"
+      ]
+    },
+    {
+      "from": "FEP",
+      "to": "MEG",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "MEG",
+      "to": "BUT",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "BUT",
+      "to": "LRD",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "LRD",
+      "to": "LUM",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "LUM",
+      "to": "TSS",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "TSS",
+      "to": "TWN",
+      "min": 1,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "TWN",
+      "to": "MIK",
+      "min": 6,
+      "routes": [
+        "610",
+        "615",
+        "615P"
+      ]
+    },
+    {
+      "from": "SHP",
+      "to": "THN",
+      "min": 3,
+      "routes": [
+        "610"
+      ]
+    },
+    {
+      "from": "NGW",
+      "to": "AFF",
+      "min": 1,
+      "routes": [
+        "610"
+      ]
+    },
+    {
+      "from": "AFF",
+      "to": "TMH",
+      "min": 1,
+      "routes": [
+        "610",
+        "751"
+      ]
+    },
+    {
+      "from": "TMH",
+      "to": "SHL",
+      "min": 3,
+      "routes": [
+        "610",
+        "751"
+      ]
+    },
+    {
+      "from": "SHL",
+      "to": "LTE",
+      "min": 4,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "751"
+      ]
+    },
+    {
+      "from": "LTE",
+      "to": "NAW",
+      "min": 3,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "751"
+      ]
+    },
+    {
+      "from": "NAW",
+      "to": "CUT",
+      "min": 2,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "751"
+      ]
+    },
+    {
+      "from": "CUT",
+      "to": "HSK",
+      "min": 2,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "751"
+      ]
+    },
+    {
+      "from": "HSK",
+      "to": "TOF",
+      "min": 9,
+      "routes": [
+        "610",
+        "614",
+        "615"
+      ]
+    },
+    {
+      "from": "TOF",
+      "to": "PIS",
+      "min": 3,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "PIS",
+      "to": "SPW",
+      "min": 5,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "SPW",
+      "to": "FNR",
+      "min": 3,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "FNR",
+      "to": "HLR",
+      "min": 1,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "HLR",
+      "to": "TTR",
+      "min": 1,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "TTR",
+      "to": "YLL",
+      "min": 3,
+      "routes": [
+        "610",
+        "614",
+        "615",
+        "761P"
+      ]
+    },
+    {
+      "from": "TOC",
+      "to": "PUT",
+      "min": 4,
+      "routes": [
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "PUT",
+      "to": "FUT",
+      "min": 9,
+      "routes": [
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "FUT",
+      "to": "SHL",
+      "min": 3,
+      "routes": [
+        "614",
+        "614P"
+      ]
+    },
+    {
+      "from": "TSL",
+      "to": "TIT",
+      "min": 2,
+      "routes": [
+        "705",
+        "706",
+        "751"
+      ]
+    },
+    {
+      "from": "TIT",
+      "to": "TWU",
+      "min": 2,
+      "routes": [
+        "705",
+        "706",
+        "751"
+      ]
+    },
+    {
+      "from": "TWU",
+      "to": "GIN",
+      "min": 2,
+      "routes": [
+        "705",
+        "706",
+        "751"
+      ]
+    },
+    {
+      "from": "GIN",
+      "to": "TWI",
+      "min": 1,
+      "routes": [
+        "705",
+        "706",
+        "751"
+      ]
+    },
+    {
+      "from": "TWI",
+      "to": "TYU",
+      "min": 2,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "TYU",
+      "to": "TSA",
+      "min": 1,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "TSA",
+      "to": "WEP",
+      "min": 3,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "WEP",
+      "to": "THE",
+      "min": 1,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "THE",
+      "to": "TYA",
+      "min": 1,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "TYA",
+      "to": "TFU",
+      "min": 3,
+      "routes": [
+        "705",
+        "706",
+        "751",
+        "761P"
+      ]
+    },
+    {
+      "from": "TFU",
+      "to": "TSU",
+      "min": 4,
+      "routes": [
+        "705",
+        "706",
+        "761P"
+      ]
+    },
+    {
+      "from": "TSU",
+      "to": "LOC",
+      "min": 2,
+      "routes": [
+        "705",
+        "706",
+        "761P"
+      ]
+    },
+    {
+      "from": "LOC",
+      "to": "TIY",
+      "min": 1,
+      "routes": [
+        "705",
+        "706",
+        "761P"
+      ]
+    },
+    {
+      "from": "TIY",
+      "to": "TSL",
+      "min": 2,
+      "routes": [
+        "705",
+        "706"
+      ]
+    },
+    {
+      "from": "YAO",
+      "to": "ONT",
+      "min": 1,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "CYB",
+      "to": "AFF",
+      "min": 1,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "HSK",
+      "to": "HMT",
+      "min": 3,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "HMT",
+      "to": "TSL",
+      "min": 3,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "TWI",
+      "to": "CHE",
+      "min": 1,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "CHE",
+      "to": "TFU",
+      "min": 1,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "TYA",
+      "to": "TYA",
+      "min": 1,
+      "routes": [
+        "751",
+        "761P"
+      ]
+    },
+    {
+      "from": "TOC",
+      "to": "YAO",
+      "min": 2,
+      "routes": [
+        "751"
+      ]
+    },
+    {
+      "from": "TIY",
+      "to": "HMT",
+      "min": 4,
+      "routes": [
+        "761P"
+      ]
+    },
+    {
+      "from": "HMT",
+      "to": "TOF",
+      "min": 7,
+      "routes": [
+        "761P"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "line": "505",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "SAS",
+          "stopId": 920,
+          "name_tc": "三聖"
+        },
+        {
+          "seq": 2,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 3,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 4,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 5,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 6,
+          "code": "KIO",
+          "stopId": 60,
+          "name_tc": "建安"
+        },
+        {
+          "seq": 7,
+          "code": "SKS",
+          "stopId": 190,
+          "name_tc": "山景(南)"
+        },
+        {
+          "seq": 8,
+          "code": "SKN",
+          "stopId": 180,
+          "name_tc": "山景(北)"
+        },
+        {
+          "seq": 9,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 10,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 11,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 12,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 13,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 14,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 15,
+          "code": "KEL",
+          "stopId": 110,
+          "name_tc": "麒麟"
+        },
+        {
+          "seq": 16,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        }
+      ]
+    },
+    {
+      "line": "505",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 2,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 3,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 4,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 5,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 6,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 7,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 8,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 9,
+          "code": "KIO",
+          "stopId": 60,
+          "name_tc": "建安"
+        },
+        {
+          "seq": 10,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 11,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 12,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 13,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 14,
+          "code": "SAS",
+          "stopId": 920,
+          "name_tc": "三聖"
+        }
+      ]
+    },
+    {
+      "line": "507",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 3,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 4,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 5,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 6,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 7,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 8,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 9,
+          "code": "HOT",
+          "stopId": 70,
+          "name_tc": "河田"
+        },
+        {
+          "seq": 10,
+          "code": "CYB",
+          "stopId": 75,
+          "name_tc": "蔡意橋"
+        },
+        {
+          "seq": 11,
+          "code": "NGW",
+          "stopId": 230,
+          "name_tc": "銀圍"
+        },
+        {
+          "seq": 12,
+          "code": "THS",
+          "stopId": 220,
+          "name_tc": "大興(南)"
+        },
+        {
+          "seq": 13,
+          "code": "THN",
+          "stopId": 212,
+          "name_tc": "大興(北)"
+        },
+        {
+          "seq": 14,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 15,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 16,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        }
+      ]
+    },
+    {
+      "line": "507",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 2,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 3,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 4,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 5,
+          "code": "THN",
+          "stopId": 212,
+          "name_tc": "大興(北)"
+        },
+        {
+          "seq": 6,
+          "code": "THS",
+          "stopId": 220,
+          "name_tc": "大興(南)"
+        },
+        {
+          "seq": 7,
+          "code": "NGW",
+          "stopId": 230,
+          "name_tc": "銀圍"
+        },
+        {
+          "seq": 8,
+          "code": "CYB",
+          "stopId": 75,
+          "name_tc": "蔡意橋"
+        },
+        {
+          "seq": 9,
+          "code": "HOT",
+          "stopId": 70,
+          "name_tc": "河田"
+        },
+        {
+          "seq": 10,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 11,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 12,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 13,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 14,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 15,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 16,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 17,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "610",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 3,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 4,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 5,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 6,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 7,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 8,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 9,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 10,
+          "code": "THN",
+          "stopId": 212,
+          "name_tc": "大興(北)"
+        },
+        {
+          "seq": 11,
+          "code": "THS",
+          "stopId": 220,
+          "name_tc": "大興(南)"
+        },
+        {
+          "seq": 12,
+          "code": "NGW",
+          "stopId": 230,
+          "name_tc": "銀圍"
+        },
+        {
+          "seq": 13,
+          "code": "AFF",
+          "stopId": 80,
+          "name_tc": "澤豐"
+        },
+        {
+          "seq": 14,
+          "code": "TMH",
+          "stopId": 90,
+          "name_tc": "屯門醫院"
+        },
+        {
+          "seq": 15,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 16,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 17,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 18,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 19,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 20,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 21,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 22,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 23,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 24,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 25,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 26,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        }
+      ]
+    },
+    {
+      "line": "610",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        },
+        {
+          "seq": 2,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 3,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 4,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 5,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 6,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 7,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 8,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 9,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 10,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 11,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 12,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 13,
+          "code": "TMH",
+          "stopId": 90,
+          "name_tc": "屯門醫院"
+        },
+        {
+          "seq": 14,
+          "code": "AFF",
+          "stopId": 80,
+          "name_tc": "澤豐"
+        },
+        {
+          "seq": 15,
+          "code": "NGW",
+          "stopId": 230,
+          "name_tc": "銀圍"
+        },
+        {
+          "seq": 16,
+          "code": "THS",
+          "stopId": 220,
+          "name_tc": "大興(南)"
+        },
+        {
+          "seq": 17,
+          "code": "THN",
+          "stopId": 212,
+          "name_tc": "大興(北)"
+        },
+        {
+          "seq": 18,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 19,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 20,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 21,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 22,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 23,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 24,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 25,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 26,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "614",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 3,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 4,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 5,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 6,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 7,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 8,
+          "code": "PUT",
+          "stopId": 300,
+          "name_tc": "杯渡"
+        },
+        {
+          "seq": 9,
+          "code": "HFT",
+          "stopId": 310,
+          "name_tc": "何福堂"
+        },
+        {
+          "seq": 10,
+          "code": "SAH",
+          "stopId": 320,
+          "name_tc": "新墟"
+        },
+        {
+          "seq": 11,
+          "code": "PRV",
+          "stopId": 330,
+          "name_tc": "景峰"
+        },
+        {
+          "seq": 12,
+          "code": "FUT",
+          "stopId": 340,
+          "name_tc": "鳳地"
+        },
+        {
+          "seq": 13,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 14,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 15,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 16,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 17,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 18,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 19,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 20,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 21,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 22,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 23,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 24,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        }
+      ]
+    },
+    {
+      "line": "614",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        },
+        {
+          "seq": 2,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 3,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 4,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 5,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 6,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 7,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 8,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 9,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 10,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 11,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 12,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 13,
+          "code": "FUT",
+          "stopId": 340,
+          "name_tc": "鳳地"
+        },
+        {
+          "seq": 14,
+          "code": "PRV",
+          "stopId": 330,
+          "name_tc": "景峰"
+        },
+        {
+          "seq": 15,
+          "code": "SAH",
+          "stopId": 320,
+          "name_tc": "新墟"
+        },
+        {
+          "seq": 16,
+          "code": "HFT",
+          "stopId": 310,
+          "name_tc": "何福堂"
+        },
+        {
+          "seq": 17,
+          "code": "PUT",
+          "stopId": 300,
+          "name_tc": "杯渡"
+        },
+        {
+          "seq": 18,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 19,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 20,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 21,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 22,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 23,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 24,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "614P",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 3,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 4,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 5,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 6,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 7,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 8,
+          "code": "PUT",
+          "stopId": 300,
+          "name_tc": "杯渡"
+        },
+        {
+          "seq": 9,
+          "code": "HFT",
+          "stopId": 310,
+          "name_tc": "何福堂"
+        },
+        {
+          "seq": 10,
+          "code": "SAH",
+          "stopId": 320,
+          "name_tc": "新墟"
+        },
+        {
+          "seq": 11,
+          "code": "PRV",
+          "stopId": 330,
+          "name_tc": "景峰"
+        },
+        {
+          "seq": 12,
+          "code": "FUT",
+          "stopId": 340,
+          "name_tc": "鳳地"
+        },
+        {
+          "seq": 13,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        }
+      ]
+    },
+    {
+      "line": "614P",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 2,
+          "code": "FUT",
+          "stopId": 340,
+          "name_tc": "鳳地"
+        },
+        {
+          "seq": 3,
+          "code": "PRV",
+          "stopId": 330,
+          "name_tc": "景峰"
+        },
+        {
+          "seq": 4,
+          "code": "SAH",
+          "stopId": 320,
+          "name_tc": "新墟"
+        },
+        {
+          "seq": 5,
+          "code": "HFT",
+          "stopId": 310,
+          "name_tc": "何福堂"
+        },
+        {
+          "seq": 6,
+          "code": "PUT",
+          "stopId": 300,
+          "name_tc": "杯渡"
+        },
+        {
+          "seq": 7,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 8,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 9,
+          "code": "SIL",
+          "stopId": 265,
+          "name_tc": "兆麟"
+        },
+        {
+          "seq": 10,
+          "code": "GOG",
+          "stopId": 260,
+          "name_tc": "豐景園"
+        },
+        {
+          "seq": 11,
+          "code": "TSP",
+          "stopId": 250,
+          "name_tc": "海皇路"
+        },
+        {
+          "seq": 12,
+          "code": "SHE",
+          "stopId": 240,
+          "name_tc": "兆禧"
+        },
+        {
+          "seq": 13,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "615",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 3,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 4,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 5,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 6,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 7,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 8,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 9,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 10,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 11,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 12,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 13,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 14,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 15,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 16,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 17,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 18,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 19,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 20,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 21,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 22,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 23,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 24,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 25,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 26,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        }
+      ]
+    },
+    {
+      "line": "615",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        },
+        {
+          "seq": 2,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 3,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 4,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 5,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 6,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 7,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 8,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 9,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 10,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 11,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 12,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 13,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 14,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 15,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 16,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 17,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 18,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 19,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 20,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 21,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 22,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 23,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 24,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 25,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 26,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "615P",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        },
+        {
+          "seq": 2,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 3,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 4,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 5,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 6,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 7,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 8,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 9,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 10,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 11,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 12,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 13,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 14,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 15,
+          "code": "KEL",
+          "stopId": 110,
+          "name_tc": "麒麟"
+        },
+        {
+          "seq": 16,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        }
+      ]
+    },
+    {
+      "line": "615P",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 2,
+          "code": "KEL",
+          "stopId": 110,
+          "name_tc": "麒麟"
+        },
+        {
+          "seq": 3,
+          "code": "CHC",
+          "stopId": 120,
+          "name_tc": "青松"
+        },
+        {
+          "seq": 4,
+          "code": "KIS",
+          "stopId": 130,
+          "name_tc": "建生"
+        },
+        {
+          "seq": 5,
+          "code": "TNK",
+          "stopId": 140,
+          "name_tc": "田景"
+        },
+        {
+          "seq": 6,
+          "code": "LEK",
+          "stopId": 150,
+          "name_tc": "良景"
+        },
+        {
+          "seq": 7,
+          "code": "SAW",
+          "stopId": 160,
+          "name_tc": "新圍"
+        },
+        {
+          "seq": 8,
+          "code": "SHP",
+          "stopId": 170,
+          "name_tc": "石排"
+        },
+        {
+          "seq": 9,
+          "code": "MIK",
+          "stopId": 200,
+          "name_tc": "鳴琴"
+        },
+        {
+          "seq": 10,
+          "code": "TWN",
+          "stopId": 50,
+          "name_tc": "青雲"
+        },
+        {
+          "seq": 11,
+          "code": "TSS",
+          "stopId": 40,
+          "name_tc": "青山村"
+        },
+        {
+          "seq": 12,
+          "code": "LUM",
+          "stopId": 30,
+          "name_tc": "龍門"
+        },
+        {
+          "seq": 13,
+          "code": "LRD",
+          "stopId": 20,
+          "name_tc": "輕鐵車廠"
+        },
+        {
+          "seq": 14,
+          "code": "BUT",
+          "stopId": 15,
+          "name_tc": "蝴蝶"
+        },
+        {
+          "seq": 15,
+          "code": "MEG",
+          "stopId": 10,
+          "name_tc": "美樂"
+        },
+        {
+          "seq": 16,
+          "code": "FEP",
+          "stopId": 1,
+          "name_tc": "屯門碼頭"
+        }
+      ]
+    },
+    {
+      "line": "705",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        },
+        {
+          "seq": 2,
+          "code": "TIT",
+          "stopId": 435,
+          "name_tc": "天慈"
+        },
+        {
+          "seq": 3,
+          "code": "TWU",
+          "stopId": 450,
+          "name_tc": "天湖"
+        },
+        {
+          "seq": 4,
+          "code": "GIN",
+          "stopId": 455,
+          "name_tc": "銀座"
+        },
+        {
+          "seq": 5,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        }
+      ]
+    },
+    {
+      "line": "705",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        },
+        {
+          "seq": 2,
+          "code": "TYU",
+          "stopId": 510,
+          "name_tc": "天悅"
+        },
+        {
+          "seq": 3,
+          "code": "TSA",
+          "stopId": 520,
+          "name_tc": "天秀"
+        },
+        {
+          "seq": 4,
+          "code": "WEP",
+          "stopId": 530,
+          "name_tc": "濕地公園"
+        },
+        {
+          "seq": 5,
+          "code": "THE",
+          "stopId": 540,
+          "name_tc": "天恒"
+        },
+        {
+          "seq": 6,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 7,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 8,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 9,
+          "code": "TSU",
+          "stopId": 460,
+          "name_tc": "天瑞"
+        },
+        {
+          "seq": 10,
+          "code": "LOC",
+          "stopId": 448,
+          "name_tc": "樂湖"
+        },
+        {
+          "seq": 11,
+          "code": "TIY",
+          "stopId": 445,
+          "name_tc": "天耀"
+        },
+        {
+          "seq": 12,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        }
+      ]
+    },
+    {
+      "line": "706",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        },
+        {
+          "seq": 2,
+          "code": "TIY",
+          "stopId": 445,
+          "name_tc": "天耀"
+        },
+        {
+          "seq": 3,
+          "code": "LOC",
+          "stopId": 448,
+          "name_tc": "樂湖"
+        },
+        {
+          "seq": 4,
+          "code": "TSU",
+          "stopId": 460,
+          "name_tc": "天瑞"
+        },
+        {
+          "seq": 5,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 6,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 7,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 8,
+          "code": "THE",
+          "stopId": 540,
+          "name_tc": "天恒"
+        },
+        {
+          "seq": 9,
+          "code": "WEP",
+          "stopId": 530,
+          "name_tc": "濕地公園"
+        },
+        {
+          "seq": 10,
+          "code": "TSA",
+          "stopId": 520,
+          "name_tc": "天秀"
+        },
+        {
+          "seq": 11,
+          "code": "TYU",
+          "stopId": 510,
+          "name_tc": "天悅"
+        },
+        {
+          "seq": 12,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        }
+      ]
+    },
+    {
+      "line": "706",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        },
+        {
+          "seq": 2,
+          "code": "GIN",
+          "stopId": 455,
+          "name_tc": "銀座"
+        },
+        {
+          "seq": 3,
+          "code": "TWU",
+          "stopId": 450,
+          "name_tc": "天湖"
+        },
+        {
+          "seq": 4,
+          "code": "TIT",
+          "stopId": 435,
+          "name_tc": "天慈"
+        },
+        {
+          "seq": 5,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        }
+      ]
+    },
+    {
+      "line": "751",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "YAO",
+          "stopId": 275,
+          "name_tc": "友愛"
+        },
+        {
+          "seq": 2,
+          "code": "ONT",
+          "stopId": 270,
+          "name_tc": "安定"
+        },
+        {
+          "seq": 3,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 4,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 5,
+          "code": "HOT",
+          "stopId": 70,
+          "name_tc": "河田"
+        },
+        {
+          "seq": 6,
+          "code": "CYB",
+          "stopId": 75,
+          "name_tc": "蔡意橋"
+        },
+        {
+          "seq": 7,
+          "code": "AFF",
+          "stopId": 80,
+          "name_tc": "澤豐"
+        },
+        {
+          "seq": 8,
+          "code": "TMH",
+          "stopId": 90,
+          "name_tc": "屯門醫院"
+        },
+        {
+          "seq": 9,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 10,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 11,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 12,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 13,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 14,
+          "code": "HMT",
+          "stopId": 425,
+          "name_tc": "坑尾村"
+        },
+        {
+          "seq": 15,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        },
+        {
+          "seq": 16,
+          "code": "TIT",
+          "stopId": 435,
+          "name_tc": "天慈"
+        },
+        {
+          "seq": 17,
+          "code": "TWU",
+          "stopId": 450,
+          "name_tc": "天湖"
+        },
+        {
+          "seq": 18,
+          "code": "GIN",
+          "stopId": 455,
+          "name_tc": "銀座"
+        },
+        {
+          "seq": 19,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        },
+        {
+          "seq": 20,
+          "code": "CHE",
+          "stopId": 490,
+          "name_tc": "翠湖"
+        },
+        {
+          "seq": 21,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 22,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 23,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 24,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        }
+      ]
+    },
+    {
+      "line": "751",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 2,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 3,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 4,
+          "code": "CHE",
+          "stopId": 490,
+          "name_tc": "翠湖"
+        },
+        {
+          "seq": 5,
+          "code": "TWI",
+          "stopId": 500,
+          "name_tc": "天榮"
+        },
+        {
+          "seq": 6,
+          "code": "GIN",
+          "stopId": 455,
+          "name_tc": "銀座"
+        },
+        {
+          "seq": 7,
+          "code": "TWU",
+          "stopId": 450,
+          "name_tc": "天湖"
+        },
+        {
+          "seq": 8,
+          "code": "TIT",
+          "stopId": 435,
+          "name_tc": "天慈"
+        },
+        {
+          "seq": 9,
+          "code": "TSL",
+          "stopId": 430,
+          "name_tc": "天水圍"
+        },
+        {
+          "seq": 10,
+          "code": "HMT",
+          "stopId": 425,
+          "name_tc": "坑尾村"
+        },
+        {
+          "seq": 11,
+          "code": "HSK",
+          "stopId": 380,
+          "name_tc": "洪水橋"
+        },
+        {
+          "seq": 12,
+          "code": "CUT",
+          "stopId": 370,
+          "name_tc": "鍾屋村"
+        },
+        {
+          "seq": 13,
+          "code": "NAW",
+          "stopId": 360,
+          "name_tc": "泥圍"
+        },
+        {
+          "seq": 14,
+          "code": "LTE",
+          "stopId": 350,
+          "name_tc": "藍地"
+        },
+        {
+          "seq": 15,
+          "code": "SHL",
+          "stopId": 100,
+          "name_tc": "兆康"
+        },
+        {
+          "seq": 16,
+          "code": "TMH",
+          "stopId": 90,
+          "name_tc": "屯門醫院"
+        },
+        {
+          "seq": 17,
+          "code": "AFF",
+          "stopId": 80,
+          "name_tc": "澤豐"
+        },
+        {
+          "seq": 18,
+          "code": "CYB",
+          "stopId": 75,
+          "name_tc": "蔡意橋"
+        },
+        {
+          "seq": 19,
+          "code": "HOT",
+          "stopId": 70,
+          "name_tc": "河田"
+        },
+        {
+          "seq": 20,
+          "code": "TML",
+          "stopId": 295,
+          "name_tc": "屯門"
+        },
+        {
+          "seq": 21,
+          "code": "TOC",
+          "stopId": 280,
+          "name_tc": "市中心"
+        },
+        {
+          "seq": 22,
+          "code": "YAO",
+          "stopId": 275,
+          "name_tc": "友愛"
+        }
+      ]
+    },
+    {
+      "line": "761P",
+      "direction": "1",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 2,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 3,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 4,
+          "code": "TSU",
+          "stopId": 460,
+          "name_tc": "天瑞"
+        },
+        {
+          "seq": 5,
+          "code": "LOC",
+          "stopId": 448,
+          "name_tc": "樂湖"
+        },
+        {
+          "seq": 6,
+          "code": "TIY",
+          "stopId": 445,
+          "name_tc": "天耀"
+        },
+        {
+          "seq": 7,
+          "code": "HMT",
+          "stopId": 425,
+          "name_tc": "坑尾村"
+        },
+        {
+          "seq": 8,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 9,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 10,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 11,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 12,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 13,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 14,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        }
+      ]
+    },
+    {
+      "line": "761P",
+      "direction": "2",
+      "stops": [
+        {
+          "seq": 1,
+          "code": "YLL",
+          "stopId": 600,
+          "name_tc": "元朗"
+        },
+        {
+          "seq": 2,
+          "code": "TTR",
+          "stopId": 590,
+          "name_tc": "大棠路"
+        },
+        {
+          "seq": 3,
+          "code": "HLR",
+          "stopId": 580,
+          "name_tc": "康樂路"
+        },
+        {
+          "seq": 4,
+          "code": "FNR",
+          "stopId": 570,
+          "name_tc": "豐年路"
+        },
+        {
+          "seq": 5,
+          "code": "SPW",
+          "stopId": 560,
+          "name_tc": "水邊圍"
+        },
+        {
+          "seq": 6,
+          "code": "PIS",
+          "stopId": 400,
+          "name_tc": "屏山"
+        },
+        {
+          "seq": 7,
+          "code": "TOF",
+          "stopId": 390,
+          "name_tc": "塘坊村"
+        },
+        {
+          "seq": 8,
+          "code": "HMT",
+          "stopId": 425,
+          "name_tc": "坑尾村"
+        },
+        {
+          "seq": 9,
+          "code": "TIY",
+          "stopId": 445,
+          "name_tc": "天耀"
+        },
+        {
+          "seq": 10,
+          "code": "LOC",
+          "stopId": 448,
+          "name_tc": "樂湖"
+        },
+        {
+          "seq": 11,
+          "code": "TSU",
+          "stopId": 460,
+          "name_tc": "天瑞"
+        },
+        {
+          "seq": 12,
+          "code": "CHF",
+          "stopId": 468,
+          "name_tc": "頌富"
+        },
+        {
+          "seq": 13,
+          "code": "TFU",
+          "stopId": 480,
+          "name_tc": "天富"
+        },
+        {
+          "seq": 14,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        },
+        {
+          "seq": 15,
+          "code": "TYA",
+          "stopId": 550,
+          "name_tc": "天逸"
+        }
+      ]
+    }
+  ],
+  "source": "https://opendata.mtr.com.hk/data/light_rail_routes_and_stops.csv"
+}

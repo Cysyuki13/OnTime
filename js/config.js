@@ -22,6 +22,12 @@ export const CONFIG = {
   hkGeoDataRevApi: 'https://geodata.gov.hk/gs/api/v1.0.0/locationReverse',
   mtrApi: 'https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php',
   kmbApi: 'https://data.etabus.gov.hk/v1/transport/kmb',
+  // Local dev proxy (server.js). Browser calls this to avoid KMB CORS.
+  kmbProxyBase: '/api/kmb',
+  lrtScheduleApi: 'https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule',
+  lrtProxyBase: '/api/lrt',
+  lrtRoutesCsv: 'data/lrt/light_rail_routes_and_stops.csv',
+  lrtGraphJson: 'data/lrt/graph.json',
   nominatimApi: 'https://nominatim.openstreetmap.org/search',
   osrmWalkApi: 'https://router.project-osrm.org/route/v1/foot',
   corsProxies: [

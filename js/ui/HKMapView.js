@@ -1,7 +1,7 @@
 import { Location } from '../models/Location.js';
 import { ModeMeta } from '../models/TransportMode.js';
 import { CONFIG } from '../config.js';
-import { HK_MTR_STATIONS, HK_MTR_LINE_EDGES, HK_LANDMARKS } from '../data/hkStations.js';
+import { HK_MTR_STATIONS, HK_MTR_LINE_EDGES, HK_LANDMARKS, HK_LRT_STOPS, HK_LRT_EDGES } from '../data/hkStations.js';
 import { HK_PLACES_DB } from '../data/hkPlacesDb.js';
 import {
   HK_MAP_BOUNDS,
@@ -16,7 +16,7 @@ const MODE_STROKE = {
   mtr: '#d8a24a',
   bus: '#d0834f',
   minibus: '#86a06f',
-  ferry: '#7fa8b8',
+  lrt: '#c45c26',
 };
 
 export class HKMapView {
@@ -41,6 +41,7 @@ export class HKMapView {
     this._resolvedLegPaths = new Map();
 
     this._hoveredLabel = null;
+    this._selectedLabelName = null; // 被選取（起點／終點）的標籤名稱，用於高亮
     this._labelHitBoxes = [];
     this._isDragging = false;
     this._dragStart = null;
@@ -76,6 +77,20 @@ export class HKMapView {
         lineCode: st.lineCode,
         minZoom: 11.2,
         address: `${st.line} · 港鐵站`,
+      });
+    }
+
+    for (const st of HK_LRT_STOPS) {
+      const name = `${st.name}（輕鐵）`;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      items.push({
+        name,
+        lat: st.lat,
+        lng: st.lng,
+        kind: 'lrt',
+        minZoom: 12.0,
+        address: `輕鐵 · ${st.zone || '西北新界'}`,
       });
     }
 
@@ -703,6 +718,8 @@ export class HKMapView {
     } else {
       this._destination = loc;
     }
+    // 高亮剛選取的地圖標籤
+    this._selectedLabelName = loc?.name || null;
 
     this.onPickLocation?.(this._activeTarget, loc);
   }
@@ -891,10 +908,12 @@ export class HKMapView {
     const w = this._canvas.clientWidth;
     const h = this._canvas.clientHeight;
 
-    ctx.fillStyle = '#151618';
+    // 海水底色（更接近真實地圖的深藍灰）
+    ctx.fillStyle = '#12161c';
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = '#232426';
+    // 淡經緯網格
+    ctx.strokeStyle = 'rgba(40, 48, 58, 0.55)';
     ctx.lineWidth = 1;
     for (let lat = 22.15; lat <= 22.56; lat += 0.05) {
       const p1 = this._latLngToScreen(lat, HK_MAP_BOUNDS.minLng);
@@ -913,6 +932,7 @@ export class HKMapView {
       ctx.stroke();
     }
 
+    // 陸地多邊形（略亮於海水，帶海岸線）
     for (const poly of HK_LANDMASS_POLYGONS) {
       ctx.beginPath();
       poly.points.forEach(([lng, lat], i) => {
@@ -921,13 +941,14 @@ export class HKMapView {
         else ctx.lineTo(pt.x, pt.y);
       });
       ctx.closePath();
-      ctx.fillStyle = '#1e1f21';
+      ctx.fillStyle = '#1c2228';
       ctx.fill();
-      ctx.strokeStyle = '#343538';
-      ctx.lineWidth = 1.25;
+      ctx.strokeStyle = 'rgba(70, 82, 96, 0.85)';
+      ctx.lineWidth = 1.4;
       ctx.stroke();
     }
 
+    // 道路網
     for (const road of HK_MAJOR_ROADS) {
       ctx.beginPath();
       road.points.forEach(([lng, lat], i) => {
@@ -937,20 +958,23 @@ export class HKMapView {
       });
       ctx.save();
       if (road.tier === 'tunnel') {
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.34)';
-        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.38)';
+        ctx.lineWidth = 1.6;
       } else if (road.tier === 'highway') {
-        ctx.strokeStyle = 'rgba(226, 232, 240, 0.22)';
-        ctx.lineWidth = this._zoom >= 12.5 ? 3 : 2;
+        ctx.strokeStyle = 'rgba(200, 210, 225, 0.28)';
+        ctx.lineWidth = this._zoom >= 12.5 ? 3.2 : 2.2;
       } else {
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.18)';
-        ctx.lineWidth = this._zoom >= 12.5 ? 2 : 1.3;
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+        ctx.lineWidth = this._zoom >= 12.5 ? 2.1 : 1.4;
       }
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
       ctx.stroke();
       ctx.restore();
     }
 
+    // 港鐵線底圖（未高亮路線時較明顯）
     for (const edge of HK_MTR_LINE_EDGES) {
       const s1 = this._stationByCode.get(edge.from);
       const s2 = this._stationByCode.get(edge.to);
@@ -961,10 +985,37 @@ export class HKMapView {
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = HK_MTR_LINE_COLORS[edge.lineCode] || '#64748b';
-      ctx.globalAlpha = this.mode === 'route' ? 0.22 : 0.48;
-      ctx.lineWidth = 2;
+      ctx.globalAlpha = this.mode === 'route' ? 0.28 : 0.55;
+      ctx.lineWidth = this._zoom >= 12 ? 2.8 : 2.2;
+      ctx.lineCap = 'round';
       ctx.stroke();
       ctx.globalAlpha = 1;
+    }
+
+    // 輕鐵路網
+    if (this._zoom >= 11.5) {
+      const lrtByCode = new Map(HK_LRT_STOPS.map((s) => [s.code, s]));
+      for (const edge of HK_LRT_EDGES) {
+        const s1 = lrtByCode.get(edge.from);
+        const s2 = lrtByCode.get(edge.to);
+        if (!s1 || !s2) continue;
+        const p1 = this._latLngToScreen(s1.lat, s1.lng);
+        const p2 = this._latLngToScreen(s2.lat, s2.lng);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.strokeStyle = '#c45c26';
+        ctx.globalAlpha = this.mode === 'route' ? 0.25 : 0.5;
+        ctx.lineWidth = this._zoom >= 12.5 ? 2.2 : 1.5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // 低縮放下的區域名稱（輔助定位，更像真實地圖）
+    if (this._zoom < 12.2) {
+      this._drawDistrictLabels(ctx);
     }
 
     if (this.mode === 'route' && this._itinerary?.segments?.length) {
@@ -979,6 +1030,27 @@ export class HKMapView {
     if (this._destination?.hasCoords) {
       this._drawPin(ctx, this._destination.lat, this._destination.lng, '#c2564a', 'END');
     }
+  }
+
+  _drawDistrictLabels(ctx) {
+    const districts = [
+      { name: '九龍', lat: 22.320, lng: 114.175 },
+      { name: '港島', lat: 22.268, lng: 114.185 },
+      { name: '新界東', lat: 22.400, lng: 114.210 },
+      { name: '新界西', lat: 22.390, lng: 114.000 },
+      { name: '將軍澳', lat: 22.310, lng: 114.260 },
+      { name: '沙田', lat: 22.382, lng: 114.195 },
+      { name: '大嶼山', lat: 22.270, lng: 113.950 },
+      { name: '荃灣', lat: 22.370, lng: 114.115 },
+    ];
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Noto Sans HK", sans-serif';
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.42)';
+    ctx.textAlign = 'center';
+    for (const d of districts) {
+      const pt = this._latLngToScreen(d.lat, d.lng);
+      ctx.fillText(d.name, pt.x, pt.y);
+    }
+    ctx.textAlign = 'start';
   }
 
   _drawHighlightedRoute(ctx) {
@@ -1031,43 +1103,84 @@ export class HKMapView {
     const occupied = [];
     ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Noto Sans HK", sans-serif';
 
+    // 起點／終點名稱也視為「已選取」以維持高亮
+    const selectedNames = new Set();
+    if (this._selectedLabelName) selectedNames.add(this._selectedLabelName);
+    if (this._origin?.name) selectedNames.add(this._origin.name);
+    if (this._destination?.name) selectedNames.add(this._destination.name);
+
     for (const item of this._interactiveLabels) {
       if (this._zoom < item.minZoom) continue;
       const pt = this._latLngToScreen(item.lat, item.lng);
       if (pt.x < -30 || pt.x > w + 30 || pt.y < -20 || pt.y > h + 20) continue;
 
       const isHovered = this._hoveredLabel?.name === item.name;
+      const isSelected = selectedNames.has(item.name);
+      const isEmphasized = isHovered || isSelected;
+
       const textW = ctx.measureText(item.name).width;
+      const padX = isEmphasized ? 8 : 5;
       const box = {
-        x: pt.x + 7,
-        y: pt.y - 9,
-        w: textW + 10,
-        h: 18,
+        x: pt.x + 8,
+        y: pt.y - (isEmphasized ? 11 : 9),
+        w: textW + padX * 2,
+        h: isEmphasized ? 20 : 18,
         item,
       };
 
-      if (!isHovered && occupied.some((o) => !(box.x + box.w < o.x || box.x > o.x + o.w || box.y + box.h < o.y || box.y > o.y + o.h))) {
+      // 已選取／懸停的標籤永遠顯示，不因重疊被剔除
+      if (
+        !isEmphasized &&
+        occupied.some(
+          (o) => !(box.x + box.w < o.x || box.x > o.x + o.w || box.y + box.h < o.y || box.y > o.y + o.h)
+        )
+      ) {
         continue;
       }
       occupied.push(box);
       this._labelHitBoxes.push(box);
 
+      // 站點圓點
+      const dotR = isSelected ? 5.5 : isHovered ? 4.5 : 3;
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, isHovered ? 4.5 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = item.kind === 'mtr' ? (HK_MTR_LINE_COLORS[item.lineCode] || '#8b8d90') : '#5f6164';
-      ctx.fill();
+      ctx.arc(pt.x, pt.y, dotR, 0, Math.PI * 2);
+      if (isSelected) {
+        ctx.fillStyle = '#d8a24a';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#061324';
+        ctx.stroke();
+      } else {
+        ctx.fillStyle =
+          item.kind === 'mtr' ? (HK_MTR_LINE_COLORS[item.lineCode] || '#8b8d90') : item.kind === 'lrt' ? '#c45c26' : '#5f6164';
+        ctx.fill();
+      }
 
-      ctx.fillStyle = isHovered ? 'rgba(216, 162, 74, 0.92)' : 'rgba(32, 33, 35, 0.9)';
+      // 標籤背景
+      if (isSelected) {
+        ctx.fillStyle = 'rgba(216, 162, 74, 0.96)';
+      } else if (isHovered) {
+        ctx.fillStyle = 'rgba(216, 162, 74, 0.88)';
+      } else {
+        ctx.fillStyle = 'rgba(28, 29, 31, 0.92)';
+      }
       ctx.beginPath();
       ctx.rect(box.x, box.y, box.w, box.h);
       ctx.fill();
 
-      ctx.strokeStyle = isHovered ? '#d8a24a' : '#404144';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isEmphasized ? '#d8a24a' : '#404144';
+      ctx.lineWidth = isSelected ? 1.75 : 1;
       ctx.stroke();
 
-      ctx.fillStyle = isHovered ? '#061324' : '#e6e7e8';
-      ctx.fillText(item.name, box.x + 5, box.y + 13);
+      // 文字
+      ctx.fillStyle = isEmphasized ? '#061324' : '#e6e7e8';
+      if (isSelected) {
+        ctx.font = '700 12px -apple-system, BlinkMacSystemFont, "Noto Sans HK", sans-serif';
+      } else {
+        ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Noto Sans HK", sans-serif';
+      }
+      ctx.fillText(item.name, box.x + padX, box.y + (isEmphasized ? 14 : 13));
+      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Noto Sans HK", sans-serif';
     }
   }
 

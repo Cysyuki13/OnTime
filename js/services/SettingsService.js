@@ -59,7 +59,7 @@ const DEFAULTS = Object.freeze({
     mtr: true,
     bus: true,
     minibus: true,
-    ferry: true,
+    lrt: true,
     taxi: false,
   },
 });
@@ -89,7 +89,7 @@ export class SettingsService {
         mtr: raw.preferredModes?.mtr !== false,
         bus: raw.preferredModes?.bus !== false,
         minibus: raw.preferredModes?.minibus !== false,
-        ferry: raw.preferredModes?.ferry !== false,
+        lrt: raw.preferredModes?.lrt !== false,
         taxi: raw.preferredModes?.taxi === true,
       },
     };
@@ -135,7 +135,7 @@ export class SettingsService {
     if (m === 'mtr') return !!this._settings.preferredModes.mtr;
     if (m === 'bus') return !!this._settings.preferredModes.bus;
     if (m === 'minibus') return !!this._settings.preferredModes.minibus;
-    if (m === 'ferry') return !!this._settings.preferredModes.ferry;
+    if (m === 'lrt' || m === 'lightrail') return !!this._settings.preferredModes.lrt;
     if (m === 'taxi') return !!this._settings.preferredModes.taxi;
     return true;
   }

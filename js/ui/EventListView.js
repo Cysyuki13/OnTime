@@ -31,10 +31,14 @@ export class EventListView {
         ? activeIt.latestDeparture.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' })
         : '—';
       const target = e.targetArrival.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+      const predArrival = activeIt?.estimatedArrival
+        ? activeIt.estimatedArrival.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' })
+        : lateStr !== '—' && activeIt?.totalDuration != null
+          ? this._addMinutesToTimeStr(lateStr, activeIt.totalDuration)
+          : '—';
       const totalMinText = activeIt?.totalDuration != null ? `約 ${activeIt.totalDuration} 分鐘` : '—';
-      const routeText = e.origin?.name
-        ? `${this._esc(e.origin.name)} → ${this._esc(e.destination.name)}`
-        : `目的地：${this._esc(e.destination.name)}`;
+      const originName = e.origin?.name || '（未設定起點）';
+      const destName = e.destination?.name || '（未設定終點）';
 
       return `
         <div class="card event-summary-card" data-event-id="${e.id}">
@@ -42,22 +46,35 @@ export class EventListView {
             <span>${this._esc(e.title)}</span>
             ${activeIt ? `<span class="card-badge info">${this._esc(activeIt.summary)}</span>` : ''}
           </div>
-          <div class="card-sub">${routeText}${activeIt ? ` · ${this._esc(activeIt.label)}` : ''}</div>
+
+          <div class="event-route-pair">
+            <div class="event-route-endpoint event-route-origin">
+              <span class="event-route-sign event-route-sign--start">起</span>
+              <span class="event-route-name" title="${this._esc(originName)}">${this._esc(originName)}</span>
+            </div>
+            <div class="event-route-arrow" aria-hidden="true">→</div>
+            <div class="event-route-endpoint event-route-dest">
+              <span class="event-route-sign event-route-sign--end">終</span>
+              <span class="event-route-name" title="${this._esc(destName)}">${this._esc(destName)}</span>
+            </div>
+          </div>
+
           <div class="divider"></div>
-          <div class="row">
+          <div class="row event-time-row">
             <div class="metric-box">
-              <div class="metric-label">總需時間</div>
-              <div class="metric-value metric-value--ok">${totalMinText}</div>
+              <div class="metric-label">最遲出發</div>
+              <div class="metric-value metric-value--accent event-time-lg">${lateStr}</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">預計到達</div>
+              <div class="metric-value event-time-lg">${predArrival}</div>
             </div>
             <div class="metric-box">
               <div class="metric-label">目標到達</div>
-              <div class="metric-value">${target}</div>
-            </div>
-            <div class="metric-box">
-              <div class="metric-label">最遲出發</div>
-              <div class="metric-value metric-value--accent">${lateStr}</div>
+              <div class="metric-value event-time-lg">${target}</div>
             </div>
           </div>
+          ${activeIt?.totalDuration != null ? `<div class="card-total-time">${totalMinText}${activeIt.label ? ` · ${this._esc(activeIt.label)}` : ''}</div>` : ''}
         </div>
       `;
     }).join('');
@@ -77,6 +94,19 @@ export class EventListView {
     root.querySelectorAll('[data-event-id]').forEach((el) => {
       el.addEventListener('click', () => this.onSelect(el.dataset.eventId));
     });
+  }
+
+  _addMinutesToTimeStr(timeStr, minutes) {
+    try {
+      const [h, m] = timeStr.split(':').map(Number);
+      if (!Number.isFinite(h) || !Number.isFinite(m)) return '—';
+      const total = h * 60 + m + (minutes || 0);
+      const hh = Math.floor(total / 60) % 24;
+      const mm = total % 60;
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    } catch {
+      return '—';
+    }
   }
 
   _esc(s) {

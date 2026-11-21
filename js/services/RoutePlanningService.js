@@ -3,7 +3,7 @@ import { RouteSegment } from '../models/RouteSegment.js';
 import { Location } from '../models/Location.js';
 import { TransportMode } from '../models/TransportMode.js';
 import { CONFIG } from '../config.js';
-import { HK_MTR_STATIONS, HK_MTR_LINE_EDGES, HK_KMB_ROUTES_DATA } from '../data/hkStations.js';
+import { HK_MTR_STATIONS, HK_MTR_LINE_EDGES, HK_KMB_ROUTES_DATA, HK_LRT_STOPS, HK_LRT_EDGES } from '../data/hkStations.js';
 import { fetchJsonWithCorsFallback } from './CorsFetchService.js';
 
 /**
@@ -22,7 +22,9 @@ export class RoutePlanningService {
     this._stopsMap = null;
     this._routeInfoMap = null;
     this._groupedRoutes = null;
+    this._kmbFromApi = false;
     this._mtrGraph = this._buildMtrGraph();
+    this._lrtGraph = this._buildLrtGraph();
   }
 
   _modeEnabled(mode) {
@@ -48,7 +50,7 @@ export class RoutePlanningService {
     const params = new URLSearchParams({
       origin: `${origin.lat},${origin.lng}`,
       destination: `${destination.lat},${destination.lng}`,
-      modes: 'mtr,bus,minibus,ferry',
+      modes: 'mtr,bus,minibus,lrt',
       max_results: '4',
     });
     if (arriveBy) params.set('arrive_by', arriveBy.toISOString());
@@ -96,7 +98,7 @@ export class RoutePlanningService {
     if (m.includes('mtr') || m.includes('subway')) return TransportMode.MTR;
     if (m.includes('minibus')) return TransportMode.MINIBUS;
     if (m.includes('bus')) return TransportMode.BUS;
-    if (m.includes('ferry')) return TransportMode.FERRY;
+    if (m.includes('lrt') || m.includes('light') || m.includes('輕鐵')) return TransportMode.LRT;
     return TransportMode.WALK;
   }
 
@@ -142,7 +144,12 @@ export class RoutePlanningService {
     const directDist = safeOrigin.distanceTo(destination) ?? 3000;
     const candidates = [];
 
-    await this._ensureKmbNetworkLoaded();
+    try {
+      await this._ensureKmbNetworkLoaded();
+    } catch (err) {
+      console.warn('[RoutePlanning] KMB API load failed, minibus-only fallback:', err?.message || err);
+      this._hydrateMinibusOnlyFallback();
+    }
 
     // 1. 短距離步行（若距離合理則為可行方案；若過遠則仍列出但標記為不建議）
     if (this._modeEnabled('walk') && directDist <= 1200) {
@@ -184,7 +191,11 @@ export class RoutePlanningService {
           const railPath = this._dijkstraMtr(oSt.station.code, dSt.station.code);
           if (!railPath) continue;
 
-          const walkCheck = this._evaluateWalk(dSt.loc, destination, 950);
+          const originAtSt = this._isAtMtrStation(safeOrigin, oSt.loc, oSt.station);
+          const destAtSt = this._isAtMtrStation(destination, dSt.loc, dSt.station);
+          const walkCheck = destAtSt
+            ? { feasible: true, reason: '', meters: 0 }
+            : this._evaluateWalk(dSt.loc, destination, 950);
           const mtrSegments = await this._buildMtrSegments(safeOrigin, destination, oSt, dSt, railPath);
           const transferCount = Math.max(0, railPath.legs.length - 1);
           const baseLineLabel =
@@ -192,16 +203,194 @@ export class RoutePlanningService {
               ? `港鐵（${railPath.legs.map((l) => l.lineName).join('→')}）`
               : `港鐵 ${railPath.legs[0].lineName}`;
 
+          // 起訖都在港鐵站 → 純港鐵，不標「+ 步行」
+          const pureMtr = originAtSt && destAtSt;
+          const label = pureMtr
+            ? baseLineLabel
+            : walkCheck.feasible
+              ? `${baseLineLabel} + 步行`
+              : `${baseLineLabel} + 步行（已拒絕·步行過遠）`;
+
           candidates.push(
             new Itinerary({
-              label: walkCheck.feasible
-                ? `${baseLineLabel} + 步行`
-                : `${baseLineLabel} + 步行（已拒絕·步行過遠）`,
+              label,
               isImpracticalWalk: !walkCheck.feasible,
               impracticalReason: walkCheck.reason,
               segments: mtrSegments,
             })
           );
+        }
+      }
+    }
+
+
+    // 2b. 輕鐵方案（西北新界）及 港鐵 + 輕鐵 轉乘
+    if (this._modeEnabled('lrt')) {
+      const originLrt = this._findNearbyLrtStops(safeOrigin, 900, 3);
+      const destLrt = this._findNearbyLrtStops(destination, 900, 3);
+
+      // 純輕鐵
+      for (const oL of originLrt) {
+        for (const dL of destLrt) {
+          if (oL.stop.code === dL.stop.code) continue;
+          const path = this._dijkstraLrt(oL.stop.code, dL.stop.code);
+          if (!path) continue;
+          const segs = await this._buildLrtSegments(safeOrigin, destination, oL, dL, path);
+          candidates.push(
+            new Itinerary({
+              label: `輕鐵（${oL.stop.name} → ${dL.stop.name}）`,
+              segments: segs,
+            })
+          );
+        }
+      }
+
+      // 港鐵 → 轉輕鐵（到達端）
+      if (this._modeEnabled('mtr') && destLrt.length) {
+        for (const oSt of originMtrList.slice(0, 2)) {
+          for (const dL of destLrt) {
+            const mtrCode = dL.stop.mtrCode;
+            if (!mtrCode) continue;
+            const railPath = this._dijkstraMtr(oSt.station.code, mtrCode);
+            if (!railPath) continue;
+            const mtrSt = this._mtrGraph.stationByCode.get(mtrCode);
+            if (!mtrSt) continue;
+            const mtrLoc = new Location({ name: mtrSt.name, lat: mtrSt.lat, lng: mtrSt.lng, source: 'mtr' });
+            const xferMin = await this._getWalkingMinutes(mtrLoc, dL.loc);
+            if (xferMin > 8) continue; // 轉乘步行過長則略過
+
+            const walkToMtr = this._isAtMtrStation(safeOrigin, oSt.loc, oSt.station)
+              ? 0
+              : await this._getWalkingMinutes(safeOrigin, oSt.loc);
+            // 轉乘站對應的輕鐵站
+            const hubLrt = HK_LRT_STOPS.find((s) => s.mtrCode === mtrCode);
+            if (!hubLrt) continue;
+            const lrtRide = this._dijkstraLrt(hubLrt.code, dL.stop.code);
+            const segs = [];
+            if (walkToMtr > 0) {
+              segs.push(
+                new RouteSegment({
+                  mode: TransportMode.WALK,
+                  from: safeOrigin,
+                  to: oSt.loc,
+                  duration: walkToMtr,
+                })
+              );
+            }
+            segs.push(...this._railLegsToSegments(railPath.legs, oSt.station));
+            segs.push(
+              new RouteSegment({
+                mode: TransportMode.WALK,
+                from: mtrLoc,
+                to: new Location({ name: hubLrt.name + '（輕鐵）', lat: hubLrt.lat, lng: hubLrt.lng, source: 'lrt' }),
+                duration: Math.max(1, xferMin),
+              })
+            );
+            if (lrtRide && hubLrt.code !== dL.stop.code) {
+              segs.push(...this._lrtLegsToSegments(lrtRide.legs));
+            }
+            const walkFrom = await this._getWalkingMinutes(dL.loc, destination);
+            if (walkFrom > 0 && !this._isNearLrtStop(destination, dL.stop, 120)) {
+              segs.push(
+                new RouteSegment({
+                  mode: TransportMode.WALK,
+                  from: dL.loc,
+                  to: destination,
+                  duration: walkFrom,
+                })
+              );
+            }
+            candidates.push(
+              new Itinerary({
+                label: `港鐵 → ${hubLrt.name} 轉輕鐵（往${dL.stop.name}）`,
+                segments: this._pruneTrivialWalkSegments(segs, safeOrigin, destination),
+              })
+            );
+          }
+        }
+      }
+
+      // 輕鐵 → 轉港鐵（出發端）
+      if (this._modeEnabled('mtr') && originLrt.length) {
+        const destMtrNear = this._findNearbyMtrStations(destination, 1500, 2);
+        for (const oL of originLrt) {
+          const mtrCode = oL.stop.mtrCode;
+          if (!mtrCode) {
+            // 先輕鐵到最近有轉乘的站
+            for (const hub of HK_LRT_STOPS.filter((s) => s.mtrCode)) {
+              const lrtRide = this._dijkstraLrt(oL.stop.code, hub.code);
+              if (!lrtRide) continue;
+              for (const dSt of destMtrNear) {
+                if (hub.mtrCode === dSt.station.code) continue;
+                const railPath = this._dijkstraMtr(hub.mtrCode, dSt.station.code);
+                if (!railPath) continue;
+                const hubLoc = new Location({ name: hub.name + '（輕鐵）', lat: hub.lat, lng: hub.lng, source: 'lrt' });
+                const mtrHub = this._mtrGraph.stationByCode.get(hub.mtrCode);
+                if (!mtrHub) continue;
+                const mtrHubLoc = new Location({ name: mtrHub.name, lat: mtrHub.lat, lng: mtrHub.lng, source: 'mtr' });
+                const segs = [];
+                const w0 = await this._getWalkingMinutes(safeOrigin, oL.loc);
+                if (w0 > 0 && !this._isNearLrtStop(safeOrigin, oL.stop, 120)) {
+                  segs.push(new RouteSegment({ mode: TransportMode.WALK, from: safeOrigin, to: oL.loc, duration: w0 }));
+                }
+                if (oL.stop.code !== hub.code) {
+                  segs.push(...this._lrtLegsToSegments(lrtRide.legs));
+                }
+                segs.push(
+                  new RouteSegment({
+                    mode: TransportMode.WALK,
+                    from: hubLoc,
+                    to: mtrHubLoc,
+                    duration: Math.max(1, Math.ceil((hubLoc.distanceTo(mtrHubLoc) ?? 80) / this._walkingSpeedMpm())),
+                  })
+                );
+                segs.push(...this._railLegsToSegments(railPath.legs, mtrHub));
+                const wEnd = await this._getWalkingMinutes(dSt.loc, destination);
+                if (wEnd > 0 && !this._isAtMtrStation(destination, dSt.loc, dSt.station)) {
+                  segs.push(new RouteSegment({ mode: TransportMode.WALK, from: dSt.loc, to: destination, duration: wEnd }));
+                }
+                candidates.push(
+                  new Itinerary({
+                    label: `輕鐵 → ${hub.name} 轉港鐵（往${dSt.station.name.replace('站', '')}）`,
+                    segments: this._pruneTrivialWalkSegments(segs, safeOrigin, destination),
+                  })
+                );
+              }
+            }
+          } else {
+            for (const dSt of destMtrNear) {
+              if (mtrCode === dSt.station.code) continue;
+              const railPath = this._dijkstraMtr(mtrCode, dSt.station.code);
+              if (!railPath) continue;
+              const mtrHub = this._mtrGraph.stationByCode.get(mtrCode);
+              if (!mtrHub) continue;
+              const mtrHubLoc = new Location({ name: mtrHub.name, lat: mtrHub.lat, lng: mtrHub.lng, source: 'mtr' });
+              const segs = [];
+              const w0 = await this._getWalkingMinutes(safeOrigin, oL.loc);
+              if (w0 > 0 && !this._isNearLrtStop(safeOrigin, oL.stop, 120)) {
+                segs.push(new RouteSegment({ mode: TransportMode.WALK, from: safeOrigin, to: oL.loc, duration: w0 }));
+              }
+              segs.push(
+                new RouteSegment({
+                  mode: TransportMode.WALK,
+                  from: oL.loc,
+                  to: mtrHubLoc,
+                  duration: Math.max(1, Math.ceil((oL.loc.distanceTo(mtrHubLoc) ?? 80) / this._walkingSpeedMpm())),
+                })
+              );
+              segs.push(...this._railLegsToSegments(railPath.legs, mtrHub));
+              const wEnd = await this._getWalkingMinutes(dSt.loc, destination);
+              if (wEnd > 0 && !this._isAtMtrStation(destination, dSt.loc, dSt.station)) {
+                segs.push(new RouteSegment({ mode: TransportMode.WALK, from: dSt.loc, to: destination, duration: wEnd }));
+              }
+              candidates.push(
+                new Itinerary({
+                  label: `輕鐵／港鐵轉乘（${oL.stop.name} → ${dSt.station.name.replace('站', '')}）`,
+                  segments: this._pruneTrivialWalkSegments(segs, safeOrigin, destination),
+                })
+              );
+            }
+          }
         }
       }
     }
@@ -212,8 +401,8 @@ export class RoutePlanningService {
     if (allowBus || allowMinibus) {
       const directKmbRoutes = this._findKmbRoutesBetween(safeOrigin, destination, {
         maxOriginDist: 1200,
-        maxDestDist: 1000,
-        limit: 3,
+        maxDestDist: 1200,
+        limit: 20,
       }).filter((kmb) => (kmb.mode === 'minibus' ? allowMinibus : allowBus));
 
       for (const kmb of directKmbRoutes) {
@@ -242,9 +431,9 @@ export class RoutePlanningService {
         if (!railPath) continue;
 
         const feederCandidates = this._findKmbRoutesBetween(hubMtr.loc, destination, {
-          maxOriginDist: 1000,
-          maxDestDist: 1000,
-          limit: 4,
+          maxOriginDist: 1200,
+          maxDestDist: 1200,
+          limit: 30,
         }).filter((f) => (f.mode === 'minibus' ? allowMinibus : allowBus));
 
         for (const feeder of feederCandidates) {
@@ -311,20 +500,9 @@ export class RoutePlanningService {
       }
     }
 
-    // 確保同時保留最快「港鐵 + 小巴」與最快「港鐵 + 巴士」以及額外替代樞紐方案（至少 3 條）
+    // 保留所有找到的接駁方案（去重後已在 feederByMode）
     const allFeeders = [...feederByMode.values()].sort((a, b) => a.estTotalMin - b.estTotalMin);
-    const chosenFeeders = [];
-    const fastestMinibus = allFeeders.find((f) => f.mode === 'minibus');
-    const fastestBus = allFeeders.find((f) => f.mode === 'bus');
-
-    if (fastestMinibus) chosenFeeders.push(fastestMinibus);
-    if (fastestBus && fastestBus !== fastestMinibus) chosenFeeders.push(fastestBus);
     for (const f of allFeeders) {
-      if (chosenFeeders.length >= 4) break;
-      if (!chosenFeeders.includes(f)) chosenFeeders.push(f);
-    }
-
-    for (const f of chosenFeeders) {
       candidates.push(
         new Itinerary({
           label: f.label,
@@ -340,7 +518,7 @@ export class RoutePlanningService {
       const altRoutes = this._findKmbRoutesBetween(safeOrigin, destination, {
         maxOriginDist: 2200,
         maxDestDist: 1500,
-        limit: 4,
+        limit: 20,
       }).filter((alt) => (alt.mode === 'minibus' ? allowMinibus : allowBus));
       for (const alt of altRoutes) {
         if (candidates.filter((c) => !c.isImpracticalWalk).length >= 3) break;
@@ -437,13 +615,20 @@ export class RoutePlanningService {
   _pruneTrivialWalkSegments(segments, origin, destination) {
     if (!Array.isArray(segments) || !segments.length) return [];
 
-    const norm = (s) => String(s || '').replace(/站.*$/, '').replace(/（.*）/, '').trim();
+    const norm = (s) =>
+      String(s || '')
+        .replace(/站.*$/, '')
+        .replace(/（.*）/, '')
+        .replace(/\s+/g, '')
+        .trim()
+        .toLowerCase();
     const isSamePlace = (a, b) => {
       if (!a || !b) return false;
       if (a.name && b.name && (a.name === b.name || norm(a.name) === norm(b.name))) return true;
       if (a.hasCoords && b.hasCoords) {
         const d = a.distanceTo(b);
-        if (d != null && d <= 45) return true;
+        // 站體／出入口範圍內視為同一地點
+        if (d != null && d <= 120) return true;
       }
       return false;
     };
@@ -460,13 +645,15 @@ export class RoutePlanningService {
       const toName = seg.to?.name || '';
       const dist = seg.from?.distanceTo?.(seg.to);
       const isAtOrigin = i === 0 && (isSamePlace(seg.from, origin) || norm(fromName) === norm(toName));
-      const isAtDest = i === segments.length - 1 && (isSamePlace(seg.to, destination) || norm(fromName) === norm(toName));
+      const isAtDest =
+        i === segments.length - 1 && (isSamePlace(seg.to, destination) || norm(fromName) === norm(toName));
       const isTrivialHop =
         norm(fromName) === norm(toName) ||
-        (dist != null && dist <= 45 && !seg.exit);
+        (dist != null && dist <= 120 && !seg.exit) ||
+        (seg.duration != null && seg.duration <= 1);
 
-      if ((isAtOrigin || isAtDest || isTrivialHop) && (seg.duration <= 2 || isSamePlace(seg.from, seg.to))) {
-        // 若是出站往轉乘點且有出口資訊，保留至下一個轉乘段的提示
+      // 起訖本質為港鐵站時，去掉多餘站外步行
+      if ((isAtOrigin || isAtDest || isTrivialHop) && (seg.duration <= 3 || isSamePlace(seg.from, seg.to))) {
         if (seg.exit && filtered.length) {
           const prevTransit = [...filtered].reverse().find((s) => s.isTransit());
           if (prevTransit && !prevTransit.exit) {
@@ -631,71 +818,181 @@ export class RoutePlanningService {
     return segs;
   }
 
-  async _buildMtrSegments(origin, destination, oSt, dSt, railPath) {
-    const walkToMtrMin = await this._getWalkingMinutes(origin, oSt.loc);
-    const walkFromMtrMin = await this._getWalkingMinutes(dSt.loc, destination);
-    const exit = this._pickExitForDestination(dSt.station, destination);
+  /**
+   * 判斷地點是否本質上就是該港鐵站（名稱匹配或極近距離），
+   * 若是則不應插入「站外步行」段。
+   */
+  _isAtMtrStation(loc, stationLoc, station) {
+    if (!loc || !stationLoc) return false;
+    const norm = (s) =>
+      String(s || '')
+        .replace(/站.*$/, '')
+        .replace(/（.*）/, '')
+        .replace(/\s+/g, '')
+        .trim()
+        .toLowerCase();
+    const locName = norm(loc.name);
+    const stName = norm(station?.name || stationLoc.name);
+    if (locName && stName && (locName === stName || locName.includes(stName) || stName.includes(locName))) {
+      return true;
+    }
+    // 來源標記為 mtr，或距離極近（站體範圍內）
+    if (loc.source === 'mtr') return true;
+    const d = loc.distanceTo?.(stationLoc);
+    if (d != null && d <= 120) return true;
+    return false;
+  }
 
-    const raw = [
-      new RouteSegment({
-        mode: TransportMode.WALK,
-        from: origin,
-        to: oSt.loc,
-        duration: walkToMtrMin,
-      }),
-      ...this._railLegsToSegments(railPath.legs, oSt.station),
-      new RouteSegment({
-        mode: TransportMode.WALK,
-        from: dSt.loc,
-        to: destination,
-        duration: walkFromMtrMin,
-        exit,
-      }),
-    ];
+  async _buildMtrSegments(origin, destination, oSt, dSt, railPath) {
+    const originAtStation = this._isAtMtrStation(origin, oSt.loc, oSt.station);
+    const destAtStation = this._isAtMtrStation(destination, dSt.loc, dSt.station);
+
+    const walkToMtrMin = originAtStation ? 0 : await this._getWalkingMinutes(origin, oSt.loc);
+    const walkFromMtrMin = destAtStation ? 0 : await this._getWalkingMinutes(dSt.loc, destination);
+    const exit = destAtStation ? null : this._pickExitForDestination(dSt.station, destination);
+
+    const raw = [];
+
+    // 起點若已在港鐵站，不插入步行段
+    if (!originAtStation && walkToMtrMin > 0) {
+      raw.push(
+        new RouteSegment({
+          mode: TransportMode.WALK,
+          from: origin,
+          to: oSt.loc,
+          duration: walkToMtrMin,
+        })
+      );
+    }
+
+    raw.push(...this._railLegsToSegments(railPath.legs, oSt.station));
+
+    // 終點若已在港鐵站，不插入步行段
+    if (!destAtStation && walkFromMtrMin > 0) {
+      raw.push(
+        new RouteSegment({
+          mode: TransportMode.WALK,
+          from: dSt.loc,
+          to: destination,
+          duration: walkFromMtrMin,
+          exit,
+        })
+      );
+    }
+
     return this._pruneTrivialWalkSegments(raw, origin, destination);
   }
 
-  async _ensureKmbNetworkLoaded() {
-    if (this._stopsMap && this._groupedRoutes) return;
+  /**
+   * 九巴路網：一律以官方 data.etabus.gov.hk API 為準。
+   * - /stop、/route-stop、/route 全量拉取後快取
+   * - 內建 HK_KMB_ROUTES_DATA 僅補充「專線小巴」（KMB API 不含小巴）
+   * - 不再用內建資料覆蓋任何九巴路線
+   */
+  async _fetchKmbJson(path) {
+    // Prefer local dev proxy (/api/kmb) — no browser CORS
+    const proxyBase = CONFIG.kmbProxyBase; // e.g. '/api/kmb'
+    if (proxyBase) {
+      try {
+        const res = await fetch(`${proxyBase}${path}`, { headers: { Accept: 'application/json' } });
+        if (res.ok) {
+          const json = await res.json();
+          return json?.data ?? json;
+        }
+      } catch (e) {
+        console.warn('[RoutePlanning] kmb proxy failed for', path, e?.message || e);
+      }
+    }
+    // Direct / public CORS proxy (often blocked)
+    const json = await fetchJsonWithCorsFallback(`${CONFIG.kmbApi}${path}`, { timeoutMs: 25000 });
+    return json?.data ?? json;
+  }
 
-    const cacheKey = 'kmb_network_v4';
+  async _ensureKmbNetworkLoaded() {
+    if (this._stopsMap && this._groupedRoutes && this._kmbFromApi) return;
+
+    const cacheKey = 'kmb_network_v6_api';
     const cached = this.storage?.get(cacheKey);
-    if (cached && cached.savedAt && Date.now() - cached.savedAt < CONFIG.kmbStaticCacheTtlMs) {
-      this._hydrateKmbCache(cached);
+    if (
+      cached &&
+      cached.savedAt &&
+      Date.now() - cached.savedAt < CONFIG.kmbStaticCacheTtlMs &&
+      cached.stops?.length &&
+      cached.routeStops?.length
+    ) {
+      this._hydrateKmbCache(cached, { fromApi: true });
       return;
     }
 
+    // 1) Live online via /api/kmb proxy (node server.js) or CORS fallback
     try {
-      const [stopsJson, routeStopsJson, routesJson] = await Promise.all([
-        fetchJsonWithCorsFallback(`${CONFIG.kmbApi}/stop`, { timeoutMs: 3500 }),
-        fetchJsonWithCorsFallback(`${CONFIG.kmbApi}/route-stop`, { timeoutMs: 3500 }),
-        fetchJsonWithCorsFallback(`${CONFIG.kmbApi}/route`, { timeoutMs: 3500 }),
+      const [stops, routeStops, routes] = await Promise.all([
+        this._fetchKmbJson('/stop/'),
+        this._fetchKmbJson('/route-stop/'),
+        this._fetchKmbJson('/route/'),
       ]);
-
-      if (stopsJson?.data?.length && routeStopsJson?.data?.length) {
+      if (Array.isArray(stops) && stops.length && Array.isArray(routeStops) && routeStops.length) {
         const payload = {
           savedAt: Date.now(),
-          stops: stopsJson.data,
-          routeStops: routeStopsJson.data,
-          routes: routesJson?.data ?? [],
+          stops,
+          routeStops,
+          routes: Array.isArray(routes) ? routes : [],
         };
-        this.storage?.set(cacheKey, payload);
-        this._hydrateKmbCache(payload);
+        try {
+          this.storage?.set(cacheKey, payload);
+        } catch {
+          /* quota — large payload may not fit localStorage */
+        }
+        this._hydrateKmbCache(payload, { fromApi: true });
+        console.info('[RoutePlanning] KMB network loaded from online API');
         return;
       }
-    } catch {
-      // 外部 API 受限時自動使用內建常規路線拓撲
+    } catch (e) {
+      console.warn('[RoutePlanning] online KMB API failed:', e?.message || e);
     }
 
-    this._hydrateBuiltInKmbRoutes();
+    // 2) Same-origin official snapshot data/kmb/*.json (offline / Live Preview without proxy)
+    try {
+      const base = new URL('data/kmb/', globalThis.location?.href || 'http://localhost/');
+      const [stops, routeStops, routes] = await Promise.all([
+        fetch(new URL('stop.json', base)).then((r) => {
+          if (!r.ok) throw new Error(`stop.json HTTP ${r.status}`);
+          return r.json();
+        }),
+        fetch(new URL('route-stop.json', base)).then((r) => {
+          if (!r.ok) throw new Error(`route-stop.json HTTP ${r.status}`);
+          return r.json();
+        }),
+        fetch(new URL('route.json', base)).then((r) => {
+          if (!r.ok) throw new Error(`route.json HTTP ${r.status}`);
+          return r.json();
+        }),
+      ]);
+      if (Array.isArray(stops) && stops.length && Array.isArray(routeStops) && routeStops.length) {
+        const payload = {
+          savedAt: Date.now(),
+          stops,
+          routeStops,
+          routes: Array.isArray(routes) ? routes : [],
+        };
+        this._hydrateKmbCache(payload, { fromApi: true });
+        console.info('[RoutePlanning] KMB network loaded from local snapshot');
+        return;
+      }
+    } catch (e) {
+      console.warn('[RoutePlanning] local KMB snapshot failed:', e?.message || e);
+    }
+
+    throw new Error('無法載入九巴路網（線上 API 與本地快照均失敗）');
   }
 
-  _hydrateBuiltInKmbRoutes() {
+  /** 僅在 API 完全失敗時的最後手段：只載入內建專線小巴，不含九巴 */
+  _hydrateMinibusOnlyFallback() {
     const stopsMap = new Map();
     const grouped = new Map();
 
     for (const r of HK_KMB_ROUTES_DATA) {
-      if (!r || !Array.isArray(r.stops)) continue;
+      if (!r || r.mode !== 'minibus' || !Array.isArray(r.stops)) continue;
       const key = `${r.route}|1|${r.serviceType}`;
       const seqStops = r.stops.map((st, i) => {
         stopsMap.set(
@@ -705,14 +1002,14 @@ export class RoutePlanningService {
             lat: st.lat,
             lng: st.lng,
             stopId: st.id,
-            source: 'kmb',
+            source: 'minibus',
           })
         );
         return { seq: i + 1, stopId: st.id };
       });
       grouped.set(key, {
         route: r.route,
-        mode: r.mode || 'bus',
+        mode: 'minibus',
         bound: '1',
         serviceType: r.serviceType,
         origTc: r.origTc,
@@ -723,19 +1020,24 @@ export class RoutePlanningService {
 
     this._stopsMap = stopsMap;
     this._groupedRoutes = grouped;
+    this._routeInfoMap = new Map();
+    this._kmbFromApi = false;
   }
 
-  _hydrateKmbCache(payload) {
+  _hydrateKmbCache(payload, { fromApi = false } = {}) {
     const stopsMap = new Map();
     for (const s of payload.stops ?? []) {
+      const lat = Number(s.lat);
+      const lng = Number(s.long ?? s.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
       stopsMap.set(
         s.stop,
         new Location({
-          name: s.name_tc,
-          lat: Number(s.lat),
-          lng: Number(s.long ?? s.lng),
+          name: s.name_tc || s.name_en || s.stop,
+          lat,
+          lng,
           stopId: s.stop,
-          address: s.name_en,
+          address: s.name_en || '',
           source: 'kmb',
         })
       );
@@ -759,7 +1061,7 @@ export class RoutePlanningService {
           route: row.route,
           mode: 'bus',
           bound: row.bound,
-          serviceType: row.service_type || '1',
+          serviceType: String(row.service_type || '1'),
           destTc: info.destTc || null,
           origTc: info.origTc || null,
           stops: [],
@@ -775,9 +1077,9 @@ export class RoutePlanningService {
       grp.stops.sort((a, b) => a.seq - b.seq);
     }
 
-    // 補充內建專線小巴／科大接駁路線，確保包含小巴與各樞紐組合
+    // 專線小巴不在九巴 API 內，僅補充 mode=minibus 的內建路線
     for (const r of HK_KMB_ROUTES_DATA) {
-      if (!r || !Array.isArray(r.stops)) continue;
+      if (!r || r.mode !== 'minibus' || !Array.isArray(r.stops)) continue;
       const key = `${r.route}|1|${r.serviceType}`;
       if (grouped.has(key)) continue;
       const seqStops = r.stops.map((st, i) => {
@@ -788,14 +1090,14 @@ export class RoutePlanningService {
             lat: st.lat,
             lng: st.lng,
             stopId: st.id,
-            source: 'kmb',
+            source: 'minibus',
           })
         );
         return { seq: i + 1, stopId: st.id };
       });
       grouped.set(key, {
         route: r.route,
-        mode: r.mode || 'bus',
+        mode: 'minibus',
         bound: '1',
         serviceType: r.serviceType,
         origTc: r.origTc,
@@ -807,6 +1109,7 @@ export class RoutePlanningService {
     this._stopsMap = stopsMap;
     this._routeInfoMap = routeInfoMap;
     this._groupedRoutes = grouped;
+    this._kmbFromApi = !!fromApi;
   }
 
   _findKmbRoutesBetween(originLoc, destLoc, { maxOriginDist = 1800, maxDestDist = 1600, limit = 5 } = {}) {
@@ -826,47 +1129,80 @@ export class RoutePlanningService {
 
     const matches = [];
     for (const grp of this._groupedRoutes.values()) {
-      let bestBoard = null;
-      let bestAlight = null;
-
+      // Collect candidate board / alight indices on this route variant
+      const boards = [];
+      const alights = [];
       for (let i = 0; i < grp.stops.length; i++) {
         const sid = grp.stops[i].stopId;
-        if (!bestBoard && nearOrigin.has(sid)) {
-          bestBoard = { idx: i, stopId: sid, dist: nearOrigin.get(sid) };
-          continue;
-        }
-        if (bestBoard && i > bestBoard.idx && nearDest.has(sid)) {
-          const d = nearDest.get(sid);
-          if (!bestAlight || d < bestAlight.dist) {
-            bestAlight = { idx: i, stopId: sid, dist: d };
+        if (nearOrigin.has(sid)) boards.push({ idx: i, stopId: sid, dist: nearOrigin.get(sid) });
+        if (nearDest.has(sid)) alights.push({ idx: i, stopId: sid, dist: nearDest.get(sid) });
+      }
+      if (!boards.length || !alights.length) continue;
+
+      // Best pair: alight after board, minimise walk + mild stop-span cost
+      let best = null;
+      for (const b of boards) {
+        for (const a of alights) {
+          if (a.idx <= b.idx) continue;
+          const stopSpan = a.idx - b.idx;
+          const walkPenalty = b.dist + a.dist;
+          // stopSpan weight kept low so medium routes (91M ~7 stops) are not crushed by 91B (1 stop)
+          const score = walkPenalty * 0.03 + stopSpan * 0.35 + stopSpan * stopSpan * 0.02;
+          if (!best || score < best.score) {
+            best = { score, board: b, alight: a, stopSpan, walkPenalty };
           }
         }
       }
+      if (!best) continue;
 
-      if (bestBoard && bestAlight) {
-        const bLoc = this._stopsMap.get(bestBoard.stopId);
-        const aLoc = this._stopsMap.get(bestAlight.stopId);
-        if (!bLoc || !aLoc) continue;
+      const bLoc = this._stopsMap.get(best.board.stopId);
+      const aLoc = this._stopsMap.get(best.alight.stopId);
+      if (!bLoc || !aLoc) continue;
 
-        const stopSpan = bestAlight.idx - bestBoard.idx;
-        const walkPenalty = bestBoard.dist + bestAlight.dist;
-        const score = walkPenalty * 0.02 + stopSpan * 1.0;
-
-        matches.push({
-          score,
-          route: grp.route,
-          mode: grp.mode || 'bus',
-          serviceType: grp.serviceType,
-          destTc: grp.destTc,
-          stopSpan,
-          boardStop: { stopId: bestBoard.stopId, name: bLoc.name, loc: bLoc },
-          alightStop: { stopId: bestAlight.stopId, name: aLoc.name, loc: aLoc },
-        });
+      let pathMeters = 0;
+      for (let i = best.board.idx; i < best.alight.idx; i++) {
+        const a = this._stopsMap.get(grp.stops[i].stopId);
+        const b = this._stopsMap.get(grp.stops[i + 1]?.stopId);
+        if (a && b) {
+          const d = a.distanceTo(b);
+          if (d != null) pathMeters += d;
+        }
       }
+
+      matches.push({
+        score: best.score,
+        route: grp.route,
+        mode: grp.mode || 'bus',
+        serviceType: grp.serviceType,
+        destTc: grp.destTc,
+        stopSpan: best.stopSpan,
+        pathMeters,
+        boardIdx: best.board.idx,
+        alightIdx: best.alight.idx,
+        boardStop: { stopId: best.board.stopId, name: bLoc.name, loc: bLoc },
+        alightStop: { stopId: best.alight.stopId, name: aLoc.name, loc: aLoc },
+      });
     }
 
+    // Prefer better score; for same route keep best bound only then return top-N unique routes + extras
     matches.sort((a, b) => a.score - b.score);
-    return matches.slice(0, limit);
+    const byRoute = new Map();
+    const ordered = [];
+    for (const m of matches) {
+      if (!byRoute.has(m.route)) {
+        byRoute.set(m.route, m);
+        ordered.push(m);
+      }
+    }
+    // Primary: unique routes; if limit allows, also add alternate bounds of strong matches
+    const out = ordered.slice(0, limit);
+    if (out.length < limit) {
+      for (const m of matches) {
+        if (out.length >= limit) break;
+        if (!out.includes(m)) out.push(m);
+      }
+    }
+    return out;
   }
 
   _findBusToBusTransfer(originLoc, destLoc) {
@@ -914,7 +1250,9 @@ export class RoutePlanningService {
             if (xferDist <= 450) {
               const score = f.walkDist + s.walkDist + xferDist * 2 + (i - f.boardIdx) * 120 + (s.alightIdx - j) * 120;
               if (!best || score < best.score) {
-                best = {
+                const pathMetersFirst = this._pathMetersAlong(f.grp, f.boardIdx, i);
+              const pathMetersSecond = this._pathMetersAlong(s.grp, j, s.alightIdx);
+              best = {
                   score,
                   first: {
                     route: f.grp.route,
@@ -922,6 +1260,7 @@ export class RoutePlanningService {
                     serviceType: f.grp.serviceType,
                     destTc: f.grp.destTc,
                     stopSpan: i - f.boardIdx,
+                    pathMeters: pathMetersFirst,
                     boardStop: { stopId: f.boardStopId, name: f.boardLoc.name, loc: f.boardLoc },
                     alightStop: { stopId: midId, name: midLoc.name, loc: midLoc },
                   },
@@ -931,6 +1270,7 @@ export class RoutePlanningService {
                     serviceType: s.grp.serviceType,
                     destTc: s.grp.destTc,
                     stopSpan: s.alightIdx - j,
+                    pathMeters: pathMetersSecond,
                     boardStop: { stopId: sMidId, name: sMidLoc.name, loc: sMidLoc },
                     alightStop: { stopId: s.alightStopId, name: s.alightLoc.name, loc: s.alightLoc },
                   },
@@ -945,11 +1285,38 @@ export class RoutePlanningService {
     return best;
   }
 
+  _pathMetersAlong(grp, fromIdx, toIdx) {
+    if (!grp?.stops || fromIdx == null || toIdx == null || toIdx <= fromIdx) return 0;
+    let meters = 0;
+    for (let i = fromIdx; i < toIdx; i++) {
+      const a = this._stopsMap?.get(grp.stops[i].stopId);
+      const b = this._stopsMap?.get(grp.stops[i + 1]?.stopId);
+      if (a && b) {
+        const d = a.distanceTo(b);
+        if (d != null) meters += d;
+      }
+    }
+    return meters;
+  }
+
+  /**
+   * 巴士車程估計：優先使用九巴站序沿線路徑距離（API 站點座標累加），
+   * 再輔以站數；官方 API 不提供站間行程時間表。
+   * 假設市區平均約 18–22 km/h（含停站），約 300–360 m/min。
+   */
   _estimateBusLegMinutes(kmb) {
-    const dist = kmb.boardStop.loc.distanceTo(kmb.alightStop.loc) ?? 2500;
-    const byDist = (dist * 1.38) / 360;
-    const byStops = kmb.stopSpan * 1.3;
-    return Math.max(5, Math.round(Math.max(byDist, byStops)));
+    const stopSpan = Math.max(1, Number(kmb.stopSpan) || 1);
+    let pathMeters = Number(kmb.pathMeters) || 0;
+    if (!pathMeters || pathMeters <= 0) {
+      pathMeters = kmb.boardStop?.loc?.distanceTo?.(kmb.alightStop?.loc) ?? 0;
+      // 直線距離補正為路網距離
+      pathMeters *= 1.35;
+    }
+    // ~20 km/h 平均（含停站）→ 約 333 m/min
+    const byPath = pathMeters / 333;
+    // 每站間隔約 1.2–1.5 分鐘（短程較密）
+    const byStops = stopSpan * 1.35;
+    return Math.max(3, Math.round(Math.max(byPath, byStops * 0.85)));
   }
 
   async _buildKmbSegments(origin, destination, kmb) {
@@ -1026,6 +1393,139 @@ export class RoutePlanningService {
     if (station.name === '尖沙咀站' && /海港城/i.test(destText)) return 'A1';
     if (station.name === '觀塘站' && /APM/i.test(destText)) return 'A2';
     return station.exits?.[0] ?? 'A';
+  }
+
+
+  _buildLrtGraph() {
+    const stopByCode = new Map(HK_LRT_STOPS.map((s) => [s.code, s]));
+    const adj = new Map();
+    for (const s of HK_LRT_STOPS) adj.set(s.code, []);
+    for (const e of HK_LRT_EDGES) {
+      if (!stopByCode.has(e.from) || !stopByCode.has(e.to)) continue;
+      const routes = e.routes || [];
+      adj.get(e.from).push({ to: e.to, minutes: e.min, routes });
+      adj.get(e.to).push({ to: e.from, minutes: e.min, routes });
+    }
+    return { stopByCode, adj };
+  }
+
+  _findNearbyLrtStops(loc, maxDist = 900, limit = 3) {
+    if (!loc?.hasCoords) return [];
+    const all = HK_LRT_STOPS.map((st) => {
+      const stLoc = new Location({ name: st.name + '（輕鐵）', lat: st.lat, lng: st.lng, source: 'lrt' });
+      return { stop: st, loc: stLoc, distance: loc.distanceTo(stLoc) ?? Infinity };
+    }).sort((a, b) => a.distance - b.distance);
+    return all.filter((x) => x.distance <= maxDist).slice(0, limit);
+  }
+
+  _isNearLrtStop(loc, stop, meters = 120) {
+    if (!loc?.hasCoords || !stop) return false;
+    const stLoc = new Location({ name: stop.name, lat: stop.lat, lng: stop.lng });
+    const d = loc.distanceTo(stLoc);
+    return d != null && d <= meters;
+  }
+
+  _dijkstraLrt(startCode, goalCode) {
+    const { stopByCode, adj } = this._lrtGraph;
+    if (!stopByCode.has(startCode) || !stopByCode.has(goalCode)) return null;
+    if (startCode === goalCode) return { legs: [], totalCost: 0 };
+
+    const dist = new Map([[startCode, 0]]);
+    const prev = new Map();
+    const pq = [{ code: startCode, cost: 0 }];
+    const seen = new Set();
+
+    while (pq.length) {
+      pq.sort((a, b) => a.cost - b.cost);
+      const cur = pq.shift();
+      if (seen.has(cur.code)) continue;
+      seen.add(cur.code);
+      if (cur.code === goalCode) break;
+      for (const edge of adj.get(cur.code) ?? []) {
+        const nextCost = cur.cost + edge.minutes;
+        if (!dist.has(edge.to) || nextCost < dist.get(edge.to)) {
+          dist.set(edge.to, nextCost);
+          prev.set(edge.to, { from: cur.code, minutes: edge.minutes, routes: edge.routes });
+          pq.push({ code: edge.to, cost: nextCost });
+        }
+      }
+    }
+
+    if (!dist.has(goalCode)) return null;
+    const steps = [];
+    let code = goalCode;
+    while (code !== startCode) {
+      const p = prev.get(code);
+      if (!p) return null;
+      steps.push({ fromCode: p.from, toCode: code, minutes: p.minutes, routes: p.routes });
+      code = p.from;
+    }
+    steps.reverse();
+
+    const legs = [];
+    for (const step of steps) {
+      const last = legs[legs.length - 1];
+      const routeHint = (step.routes && step.routes[0]) || '輕鐵';
+      if (last && last.routes?.some((r) => step.routes?.includes(r))) {
+        last.toCode = step.toCode;
+        last.minutes += step.minutes;
+      } else {
+        legs.push({
+          fromCode: step.fromCode,
+          toCode: step.toCode,
+          minutes: step.minutes,
+          routes: step.routes || [],
+          routeLabel: routeHint,
+        });
+      }
+    }
+    return { legs, totalCost: dist.get(goalCode) };
+  }
+
+  _lrtLegsToSegments(legs) {
+    const { stopByCode } = this._lrtGraph;
+    const segs = [];
+    for (const leg of legs) {
+      const fromSt = stopByCode.get(leg.fromCode);
+      const toSt = stopByCode.get(leg.toCode);
+      if (!fromSt || !toSt) continue;
+      const routeNo = leg.routeLabel || leg.routes?.[0] || '';
+      segs.push(
+        new RouteSegment({
+          mode: TransportMode.LRT,
+          from: new Location({ name: fromSt.name + '（輕鐵）', lat: fromSt.lat, lng: fromSt.lng, source: 'lrt' }),
+          to: new Location({ name: toSt.name + '（輕鐵）', lat: toSt.lat, lng: toSt.lng, source: 'lrt' }),
+          duration: Math.max(1, leg.minutes),
+          route: routeNo ? `輕鐵 ${routeNo}` : '輕鐵',
+          direction: `往 ${toSt.name}`,
+          boardStop: fromSt.name,
+          alightStop: toSt.name,
+          stopId: fromSt.stopId,
+          lrtStopId: fromSt.stopId,
+        })
+      );
+    }
+    return segs;
+  }
+
+  async _buildLrtSegments(origin, destination, oL, dL, lrtPath) {
+    const originAt = this._isNearLrtStop(origin, oL.stop, 120);
+    const destAt = this._isNearLrtStop(destination, dL.stop, 120);
+    const raw = [];
+    if (!originAt) {
+      const w = await this._getWalkingMinutes(origin, oL.loc);
+      if (w > 0) {
+        raw.push(new RouteSegment({ mode: TransportMode.WALK, from: origin, to: oL.loc, duration: w }));
+      }
+    }
+    raw.push(...this._lrtLegsToSegments(lrtPath.legs));
+    if (!destAt) {
+      const w = await this._getWalkingMinutes(dL.loc, destination);
+      if (w > 0) {
+        raw.push(new RouteSegment({ mode: TransportMode.WALK, from: dL.loc, to: destination, duration: w }));
+      }
+    }
+    return this._pruneTrivialWalkSegments(raw, origin, destination);
   }
 
   async _populateEtas(itineraries) {

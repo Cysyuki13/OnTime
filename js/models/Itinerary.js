@@ -27,7 +27,7 @@ export class Itinerary {
     if (!modes.length) {
       return this.isImpracticalWalk ? '步行（不建議·距離過遠）' : '步行';
     }
-    return modes.map((m) => ({ mtr: '港鐵', bus: '巴士', minibus: '小巴', ferry: '渡輪' }[m] ?? m)).join(' + ');
+    return modes.map((m) => ({ mtr: '港鐵', bus: '巴士', minibus: '小巴', lrt: '輕鐵' }[m] ?? m)).join(' + ');
   }
 
   clone() {

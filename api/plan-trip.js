@@ -1,6 +1,6 @@
 // Vercel / Serverless 代理：转发请求至 Wheels Router 并处理缓存
 export default async function handler(req, res) {
-  const { origin, destination, modes = 'mtr,bus,ferry', max_results = '4', arrive_by } = req.query;
+  const { origin, destination, modes = 'mtr,bus,lrt', max_results = '4', arrive_by } = req.query;
 
   const payload = {
     origin,

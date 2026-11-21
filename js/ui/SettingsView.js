@@ -4,7 +4,7 @@ const MODE_ROWS = [
   { key: 'mtr', label: '港鐵 MTR', icon: '🚇', desc: '鐵路主幹線' },
   { key: 'bus', label: '巴士 Bus', icon: '🚌', desc: '九巴 / 城巴等' },
   { key: 'minibus', label: '專線小巴', icon: '🚐', desc: '綠色／紅色小巴' },
-  { key: 'ferry', label: '渡輪 Ferry', icon: '⛴️', desc: '離島航線' },
+  { key: 'lrt', label: '輕鐵 Light Rail', icon: '🚊', desc: '屯門／天水圍／元朗' },
   { key: 'taxi', label: '的士 Taxi', icon: '🚕', desc: '實驗功能，預設關閉' },
   { key: 'walk', label: '步行 Walk', icon: '🚶', desc: '接駁與短途步行' },
 ];
