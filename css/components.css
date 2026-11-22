@@ -204,6 +204,33 @@
 .mode-type-icon.is-off {
   opacity: 0.22;
 }
+.mode-type-icon .mode-icon-img,
+.mode-icon-img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.segment-icon .mode-icon-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+.settings-mode-icon .mode-icon-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+.combo-filter-label .mode-icon-img {
+  display: inline-block;
+  vertical-align: middle;
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+  border-radius: 3px;
+}
 .path-category {
   margin-bottom: 16px;
 }
@@ -1592,8 +1619,12 @@ body.hk-map-fullscreen-lock { overflow: hidden; }
 .settings-mode-icon {
   font-size: 18px;
   width: 28px;
+  height: 28px;
   text-align: center;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .settings-mode-text {
   flex: 1;

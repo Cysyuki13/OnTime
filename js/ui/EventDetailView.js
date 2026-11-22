@@ -1,4 +1,4 @@
-import { ModeMeta } from '../models/TransportMode.js';
+import { ModeMeta, modeIconHtml } from '../models/TransportMode.js';
 import { HKMapView } from './HKMapView.js';
 
 export class EventDetailView {
@@ -67,7 +67,7 @@ export class EventDetailView {
           const timeRange = `${fmt(s.departAt)} → ${fmt(s.arriveAt)}`;
           return `
               <div class="segment" data-seg-idx="${idx}" data-it-id="${it.id}" title="點擊在地圖高亮此段路徑">
-                <div class="segment-icon">${meta.icon}</div>
+                <div class="segment-icon">${modeIconHtml(s.mode, { size: 20 })}</div>
                 <div class="segment-info">
                   <div class="segment-mode">${meta.label}${s.route ? ` <span class="route-chip">${s.route}</span>` : ''}</div>
                   <div class="segment-detail">${this._esc(detail)}</div>
@@ -218,7 +218,7 @@ export class EventDetailView {
         return `
           <button type="button" class="combo-filter-item ${on ? 'is-on' : ''}" data-action="toggle-mode" data-mode="${m.key}" title="${this._esc(m.label)}">
             <span class="combo-filter-dot"></span>
-            <span class="combo-filter-label">${m.icon} ${this._esc(m.label)}</span>
+            <span class="combo-filter-label">${m.iconHtml || ''} ${this._esc(m.label)}</span>
             <span class="combo-filter-count">${count}</span>
           </button>
         `;
@@ -653,11 +653,12 @@ export class EventDetailView {
 
   _filterModeDefs() {
     return [
-      { key: 'mtr', label: '港鐵', icon: '🚇' },
-      { key: 'bus', label: '巴士', icon: '🚌' },
-      { key: 'minibus', label: '小巴', icon: '🚐' },
-      { key: 'lrt', label: '輕鐵', icon: '🚊' },
-      { key: 'walk', label: '步行', icon: '🚶' },
+      { key: 'mtr', label: '港鐵', iconHtml: modeIconHtml('mtr', { size: 16 }) },
+      { key: 'bus', label: '巴士', iconHtml: modeIconHtml('bus', { size: 16 }) },
+      { key: 'minibus', label: '小巴', iconHtml: modeIconHtml('minibus', { size: 16 }) },
+      { key: 'lrt', label: '輕鐵', iconHtml: modeIconHtml('lrt', { size: 16 }) },
+      { key: 'walk', label: '步行', iconHtml: modeIconHtml('walk', { size: 16 }) },
+      { key: 'taxi', label: '的士', iconHtml: modeIconHtml('taxi', { size: 16 }) },
     ];
   }
 
@@ -698,16 +699,17 @@ export class EventDetailView {
   _renderModeIconStrip(modesInvolved) {
     // Fixed order strip; lit when involved
     const order = [
-      { mode: 'mtr', icon: '🚇', title: '港鐵' },
-      { mode: 'bus', icon: '🚌', title: '巴士' },
-      { mode: 'minibus', icon: '🚐', title: '小巴' },
-      { mode: 'lrt', icon: '🚊', title: '輕鐵' },
-      { mode: 'walk', icon: '🚶', title: '步行' },
+      { mode: 'mtr', title: '港鐵' },
+      { mode: 'bus', title: '巴士' },
+      { mode: 'minibus', title: '小巴' },
+      { mode: 'lrt', title: '輕鐵' },
+      { mode: 'walk', title: '步行' },
+      { mode: 'taxi', title: '的士' },
     ];
     const cells = order
       .map((o) => {
         const on = modesInvolved.has(o.mode);
-        return `<span class="mode-type-icon ${on ? 'is-on' : 'is-off'}" title="${o.title}${on ? '（本方案使用）' : ''}" data-mode="${o.mode}">${o.icon}</span>`;
+        return `<span class="mode-type-icon ${on ? 'is-on' : 'is-off'}" title="${o.title}${on ? '（本方案使用）' : ''}" data-mode="${o.mode}">${modeIconHtml(o.mode, { size: 16 })}</span>`;
       })
       .join('');
     return `<div class="mode-type-strip" aria-label="交通方式">${cells}</div>`;

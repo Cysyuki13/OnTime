@@ -1,12 +1,13 @@
 import { SettingsService, WALK_SPEED_LEVELS, COLOR_THEMES, MAX_PATHS_OPTIONS } from '../services/SettingsService.js';
+import { modeIconHtml } from '../models/TransportMode.js';
 
 const MODE_ROWS = [
-  { key: 'mtr', label: '港鐵 MTR', icon: '🚇', desc: '鐵路主幹線' },
-  { key: 'bus', label: '巴士 Bus', icon: '🚌', desc: '九巴 / 城巴等' },
-  { key: 'minibus', label: '專線小巴', icon: '🚐', desc: '綠色／紅色小巴' },
-  { key: 'lrt', label: '輕鐵 Light Rail', icon: '🚊', desc: '屯門／天水圍／元朗' },
-  { key: 'taxi', label: '的士 Taxi', icon: '🚕', desc: '實驗功能，預設關閉' },
-  { key: 'walk', label: '步行 Walk', icon: '🚶', desc: '接駁與短途步行' },
+  { key: 'mtr', label: '港鐵 MTR', desc: '鐵路主幹線' },
+  { key: 'bus', label: '巴士 Bus / KMB', desc: '九巴 / 城巴等' },
+  { key: 'minibus', label: '專線小巴', desc: '綠色／紅色小巴' },
+  { key: 'lrt', label: '輕鐵 Light Rail', desc: '屯門／天水圍／元朗' },
+  { key: 'taxi', label: '的士 Taxi', desc: '實驗功能，預設關閉' },
+  { key: 'walk', label: '步行 Walk', desc: '接駁與短途步行' },
 ];
 
 export class SettingsView {
@@ -29,7 +30,7 @@ export class SettingsView {
       const on = !!s.preferredModes[row.key];
       return `
         <label class="settings-mode-row ${on ? 'is-on' : 'is-off'}" data-mode-key="${row.key}">
-          <span class="settings-mode-icon">${row.icon}</span>
+          <span class="settings-mode-icon">${modeIconHtml(row.key, { size: 28 })}</span>
           <span class="settings-mode-text">
             <span class="settings-mode-label">${row.label}</span>
             <span class="settings-mode-desc">${row.desc}</span>

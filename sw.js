@@ -1,16 +1,22 @@
-const CACHE = 'teiji-hk-v32';
+const CACHE = 'teiji-hk-v33';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json?v=32',
-  './css/main.css?v=32',
-  './css/components.css?v=32',
-  './js/app.js?v=32',
+  './manifest.json?v=33',
+  './css/main.css?v=33',
+  './css/components.css?v=33',
+  './js/app.js?v=33',
   './js/config.js',
-  './icons/icon-192.png?v=32',
-  './icons/icon-512.png?v=32',
-  './icons/icon-192-maskable.png?v=32',
-  './icons/icon-512-maskable.png?v=32'
+  './icons/icon-192.png?v=33',
+  './icons/icon-512.png?v=33',
+  './icons/icon-192-maskable.png?v=33',
+  './icons/icon-512-maskable.png?v=33',
+  './icons/modes/mtr.svg',
+  './icons/modes/kmb.svg',
+  './icons/modes/walk.svg',
+  './icons/modes/taxi.svg',
+  './icons/modes/minibus.svg',
+  './icons/modes/lrt.svg'
 ];
 
 self.addEventListener('install', (e) => {
