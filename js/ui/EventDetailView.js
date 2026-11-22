@@ -11,6 +11,7 @@ export class EventDetailView {
     onToggleNotification,
     onUpdateTime,
     onUpdateEventDetails,
+    onSaveUserPath,
   }) {
     this.onBack = onBack;
     this.onDelete = onDelete;
@@ -20,6 +21,7 @@ export class EventDetailView {
     this.onToggleNotification = onToggleNotification;
     this.onUpdateTime = onUpdateTime;
     this.onUpdateEventDetails = onUpdateEventDetails;
+    this.onSaveUserPath = onSaveUserPath;
     this._expandedIds = new Set();
     this._drawerOpen = false;
     this._editingDetails = false;
@@ -80,7 +82,7 @@ export class EventDetailView {
         it.isImpracticalWalk ? '<span class="card-badge danger">已拒絕·步行過遠</span>' : '',
         !it.isImpracticalWalk && isShortest ? '<span class="card-badge warning">最短時間 · 推薦</span>' : '',
         isChosen ? '<span class="card-badge success">已選</span>' : '',
-        it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
+        it.isUserSaved ? '<span class="card-badge info">自訂路徑</span>' : it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
       ]
         .filter(Boolean)
         .join('');
@@ -131,6 +133,7 @@ export class EventDetailView {
                 <button type="button" class="btn btn-ghost btn-sm" data-action="select" data-id="${it.id}">
                   ${isChosen ? '已選此方案' : '選擇此方案'}
                 </button>
+                <button type="button" class="btn btn-ghost btn-sm" data-action="edit-path" data-id="${it.id}">編輯路徑</button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="remarks" data-id="${it.id}">備註</button>
                 <label class="toggle-wrap">
                   <span class="toggle-label">通知</span>
@@ -141,6 +144,39 @@ export class EventDetailView {
               <div class="remarks-editor" data-remarks-for="${it.id}" hidden>
                 <textarea placeholder="輸入備註，例如：記得帶學生證、B2 出口直行…">${this._esc(it.remarks)}</textarea>
                 <button type="button" class="btn btn-primary btn-sm" data-action="save-remarks" data-id="${it.id}">儲存備註</button>
+              </div>
+
+              <div class="path-editor" data-path-edit-for="${it.id}" hidden>
+                <div class="path-editor-title">編輯站點後另存為「自訂路徑」</div>
+                <div class="path-editor-segs">
+                  ${it.segments
+                    .map((s, idx) => {
+                      if (!s.isTransit()) {
+                        return `
+                          <div class="path-edit-seg walk" data-seg-idx="${idx}">
+                            <span class="path-edit-mode">步行</span>
+                            <span class="card-sub">${this._esc(s.from?.name || '')} → ${this._esc(s.to?.name || '')}</span>
+                          </div>`;
+                      }
+                      const isRail = s.mode === 'mtr' || s.mode === 'lrt';
+                      return `
+                        <div class="path-edit-seg transit" data-seg-idx="${idx}">
+                          <div class="path-edit-mode">${this._esc((ModeMeta[s.mode] || {}).label || s.mode)}${s.route ? ` · ${this._esc(s.route)}` : ''}</div>
+                          <label>上車站
+                            <input type="text" data-field="boardStop" data-seg-idx="${idx}" value="${this._esc(s.boardStop || s.from?.name || '')}" placeholder="上車站名稱" />
+                          </label>
+                          <label>下車站
+                            <input type="text" data-field="alightStop" data-seg-idx="${idx}" value="${this._esc(s.alightStop || s.to?.name || '')}" placeholder="下車站名稱" />
+                          </label>
+                          ${isRail ? `<label>出口（可選）<input type="text" data-field="exit" data-seg-idx="${idx}" value="${this._esc(s.exit || '')}" placeholder="例如 B2" /></label>` : ''}
+                        </div>`;
+                    })
+                    .join('')}
+                </div>
+                <div class="path-editor-actions">
+                  <button type="button" class="btn btn-primary btn-sm" data-action="save-user-path" data-id="${it.id}">儲存為自訂路徑</button>
+                  <button type="button" class="btn btn-ghost btn-sm" data-action="cancel-edit-path" data-id="${it.id}">取消</button>
+                </div>
               </div>
             </div>
           </div>
@@ -512,6 +548,50 @@ export class EventDetailView {
         this.onToggleNotification(input.dataset.id, input.checked);
       });
     });
+
+    root.querySelectorAll('[data-action="edit-path"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const card = root.querySelector(`.itinerary-card[data-itinerary-id="${id}"]`);
+        const body = root.querySelector(`[data-body-for="${id}"]`);
+        if (body && body.hidden) {
+          body.hidden = false;
+          card?.classList.add('is-expanded');
+          const toggleText = card?.querySelector('.toggle-text');
+          if (toggleText) toggleText.textContent = '收合';
+          this._expandedIds.add(id);
+        }
+        const editor = root.querySelector(`[data-path-edit-for="${id}"]`);
+        if (editor) editor.hidden = !editor.hidden;
+      });
+    });
+
+    root.querySelectorAll('[data-action="cancel-edit-path"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const editor = root.querySelector(`[data-path-edit-for="${btn.dataset.id}"]`);
+        if (editor) editor.hidden = true;
+      });
+    });
+
+    root.querySelectorAll('[data-action="save-user-path"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const editor = root.querySelector(`[data-path-edit-for="${id}"]`);
+        if (!editor || !this.onSaveUserPath) return;
+        const edits = [];
+        editor.querySelectorAll('.path-edit-seg.transit').forEach((segEl) => {
+          const segIndex = Number(segEl.dataset.segIdx);
+          const boardStop = segEl.querySelector('[data-field="boardStop"]')?.value;
+          const alightStop = segEl.querySelector('[data-field="alightStop"]')?.value;
+          const exit = segEl.querySelector('[data-field="exit"]')?.value;
+          edits.push({ segIndex, boardStop, alightStop, exit });
+        });
+        this.onSaveUserPath(id, edits);
+      });
+    });
   }
 
 
@@ -656,6 +736,7 @@ export class EventDetailView {
 
   _comboTitle(key) {
     const map = {
+      'user-saved': '自訂路徑（已儲存）',
       walk: '純步行',
       'walk-reject': '步行（不建議）',
       mtr: '港鐵',
@@ -677,23 +758,25 @@ export class EventDetailView {
   }
 
   _groupItinerariesByCombo(itineraries, chosenId) {
+    // 單一交通工具分類在前，組合轉乘在後（仍按組合分類顯示）
     const order = [
+      'user-saved',
       'mtr',
+      'bus',
+      'minibus',
+      'lrt',
+      'walk',
       'mtr+lrt',
       'mtr+bus',
       'mtr+minibus',
+      'bus+minibus',
       'mtr+bus+minibus',
       'mtr+lrt+bus',
-      'lrt',
-      'bus',
-      'minibus',
-      'bus+minibus',
-      'walk',
       'walk-reject',
     ];
     const buckets = new Map();
     for (const it of itineraries || []) {
-      const key = this._comboKey(it);
+      const key = it.isUserSaved ? 'user-saved' : this._comboKey(it);
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(it);
     }
@@ -702,6 +785,10 @@ export class EventDetailView {
         const aChosen = chosenId && a.id === chosenId ? 0 : 1;
         const bChosen = chosenId && b.id === chosenId ? 0 : 1;
         if (aChosen !== bChosen) return aChosen - bChosen;
+        // 同類別內：步數少優先，再比總時長
+        const aSteps = a.segments?.length ?? 99;
+        const bSteps = b.segments?.length ?? 99;
+        if (aSteps !== bSteps) return aSteps - bSteps;
         const aDur = Number.isFinite(a.totalDuration) ? a.totalDuration : Infinity;
         const bDur = Number.isFinite(b.totalDuration) ? b.totalDuration : Infinity;
         if (aDur !== bDur) return aDur - bDur;
@@ -716,11 +803,11 @@ export class EventDetailView {
       if (ra !== rb) return ra - rb;
       return a.localeCompare(b);
     });
-    // If chosen exists, move its category to front
+    // 已選方案所在分類移到最前
     if (chosenId) {
       const chosen = (itineraries || []).find((x) => x.id === chosenId);
       if (chosen) {
-        const ck = this._comboKey(chosen);
+        const ck = chosen.isUserSaved ? 'user-saved' : this._comboKey(chosen);
         const idx = keys.indexOf(ck);
         if (idx > 0) {
           keys.splice(idx, 1);

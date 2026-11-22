@@ -12,6 +12,8 @@ export class Itinerary {
     this.remarks = '';
     this.notificationsEnabled = true;
     this.isCustomized = false;
+    /** 使用者透過「編輯路徑」另存的路徑 */
+    this.isUserSaved = false;
   }
 
   get transitSegments() {
@@ -43,6 +45,7 @@ export class Itinerary {
     it.remarks = this.remarks;
     it.notificationsEnabled = this.notificationsEnabled;
     it.isCustomized = this.isCustomized;
+    it.isUserSaved = this.isUserSaved;
     return it;
   }
 
@@ -71,6 +74,7 @@ export class Itinerary {
       remarks: this.remarks,
       notificationsEnabled: this.notificationsEnabled,
       isCustomized: this.isCustomized,
+      isUserSaved: this.isUserSaved,
     };
   }
 
@@ -88,6 +92,7 @@ export class Itinerary {
     it.remarks = obj.remarks ?? '';
     it.notificationsEnabled = obj.notificationsEnabled ?? true;
     it.isCustomized = obj.isCustomized ?? false;
+    it.isUserSaved = obj.isUserSaved ?? false;
     return it;
   }
 }

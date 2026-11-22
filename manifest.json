@@ -1,6 +1,8 @@
 {
-  "name": "HK 交通計時器",
-  "short_name": "HK Timer",
+  "name": "天時-香港",
+  "short_name": "天時",
+  "description": "Teiji HK — Hong Kong transit timer (MTR · KMB · Minibus ETA)",
+  "lang": "zh-HK",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
@@ -8,25 +10,25 @@
   "theme_color": "#131415",
   "icons": [
     {
-      "src": "icons/icon-192.png?v=30",
+      "src": "icons/icon-192.png?v=32",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png?v=30",
+      "src": "icons/icon-512.png?v=32",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-192-maskable.png?v=30",
+      "src": "icons/icon-192-maskable.png?v=32",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icons/icon-512-maskable.png?v=30",
+      "src": "icons/icon-512-maskable.png?v=32",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

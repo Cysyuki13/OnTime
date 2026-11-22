@@ -1,5 +1,5 @@
 /* ============================================================
-   HK 交通計時器 — terminal / engineer-workbench theme
+   天時-香港 (Teiji HK) — terminal / engineer-workbench theme
    Dark, monochrome + single amber accent, dense table rows,
    hard 1px hairline rules, mono numerals. No gradients, no
    frosted glass, no large radii, no colored shadows.
@@ -288,6 +288,54 @@
 
 .remarks-editor { margin-top: 10px; }
 .remarks-editor textarea { min-height: 62px; resize: vertical; margin-bottom: 8px; }
+
+.path-editor {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2, rgba(255,255,255,0.03));
+}
+.path-editor-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.path-editor-segs { display: flex; flex-direction: column; gap: 10px; }
+.path-edit-seg {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface, transparent);
+}
+.path-edit-seg.walk { opacity: 0.75; }
+.path-edit-mode {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--accent);
+}
+.path-edit-seg label {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.path-edit-seg input[type="text"] {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+.path-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
 
 .time-editor { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .time-editor input { flex: 1; min-width: 190px; }
@@ -1477,6 +1525,21 @@ body.hk-map-fullscreen-lock { overflow: hidden; }
 .settings-metric-line strong {
   color: var(--accent);
 }
+.settings-max-paths-seg {
+  margin: 10px 0 8px;
+  flex-wrap: wrap;
+}
+.settings-load-hint {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2, rgba(255,255,255,0.03));
+  line-height: 1.45;
+}
+.settings-load-hint.level-fast strong { color: #6faf7a; }
+.settings-load-hint.level-balanced strong { color: var(--accent); }
+.settings-load-hint.level-slower strong { color: #d8a24a; }
+.settings-load-hint.level-slow strong { color: #d47a8a; }
 .settings-example-box {
   margin-top: 8px;
   padding: 8px 10px;

@@ -1,4 +1,4 @@
-import { SettingsService, WALK_SPEED_LEVELS, COLOR_THEMES } from '../services/SettingsService.js';
+import { SettingsService, WALK_SPEED_LEVELS, COLOR_THEMES, MAX_PATHS_OPTIONS } from '../services/SettingsService.js';
 
 const MODE_ROWS = [
   { key: 'mtr', label: '港鐵 MTR', icon: '🚇', desc: '鐵路主幹線' },
@@ -135,6 +135,31 @@ export class SettingsView {
           </div>
         </section>
 
+        <!-- Max paths -->
+        <section class="settings-card">
+          <div class="settings-card-head">
+            <span class="settings-card-title">路徑結果上限</span>
+            <span class="settings-card-badge" data-max-paths-badge>${s.maxPaths ?? 40} 條</span>
+          </div>
+          <p class="settings-help">
+            每次規劃最多回傳的方案數量。系統會優先顯示<strong>單一交通工具</strong>（港鐵／巴士／小巴等），再顯示轉乘組合。
+            數字愈大，可比較的接駁愈多，但搜尋與載入時間也會增加。
+          </p>
+          <div class="settings-segmented settings-max-paths-seg" role="group" aria-label="路徑結果上限">
+            ${MAX_PATHS_OPTIONS.map((n) => {
+              const active = (s.maxPaths ?? 40) === n;
+              return `<button type="button" class="settings-seg-btn ${active ? 'is-active' : ''}" data-max-paths="${n}">${n}</button>`;
+            }).join('')}
+          </div>
+          ${(() => {
+            const hint = SettingsService.maxPathsLoadHint(s.maxPaths ?? 40);
+            return `
+              <div class="settings-metric-line settings-load-hint level-${hint.level}" data-max-paths-hint>
+                <strong>載入影響：${hint.label}</strong> — ${hint.text}
+              </div>`;
+          })()}
+        </section>
+
         <!-- Preferred transport -->
         <section class="settings-card">
           <div class="settings-card-head">
@@ -263,6 +288,19 @@ export class SettingsView {
         this.settingsService.update({ colorTheme: this._draft.colorTheme });
       });
     });
+
+    // Max paths segmented
+    root.querySelectorAll('[data-max-paths]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const n = Number(btn.dataset.maxPaths);
+        if (!Number.isFinite(n)) return;
+        this._draft.maxPaths = n;
+        root.querySelectorAll('[data-max-paths]').forEach((b) => {
+          b.classList.toggle('is-active', Number(b.dataset.maxPaths) === n);
+        });
+        this._syncLiveLabels();
+      });
+    });
   }
 
   _syncLiveLabels() {
@@ -286,6 +324,15 @@ export class SettingsView {
       '[data-arrive-before-hint]',
       `路徑預測會以目標時間 <strong>提前 ${s.arriveBeforeMinutes} 分鐘</strong> 到達`
     );
+
+    const maxPaths = s.maxPaths ?? 40;
+    set('[data-max-paths-badge]', `${maxPaths} 條`);
+    const loadHint = SettingsService.maxPathsLoadHint(maxPaths);
+    const hintEl = root.querySelector('[data-max-paths-hint]');
+    if (hintEl) {
+      hintEl.className = `settings-metric-line settings-load-hint level-${loadHint.level}`;
+      hintEl.innerHTML = `<strong>載入影響：${loadHint.label}</strong> — ${loadHint.text}`;
+    }
 
     // Update example grid current highlight
     root.querySelectorAll('.settings-example-grid span').forEach((span) => {

@@ -15,9 +15,10 @@ export class PlaceAutocompleteService {
     const q = query.trim();
     if (q.length < 1) return [];
 
+    // 港鐵站優先：名稱匹配的站放最前面，減少選到非站地標後再被當成「附近站 + 步行」
     const localResults = [
-      ...this._searchLandmarks(q, 5),
-      ...this._searchMtrStations(q, 4),
+      ...this._searchMtrStations(q, 5),
+      ...this._searchLandmarks(q, 4),
       ...this._searchBuiltInBusStops(q, 4),
     ];
 

@@ -172,19 +172,35 @@ export class RoutePlanningService {
       );
     }
 
-    // 2. 港鐵 + 步行方案（包含合理步行與「步行距離過遠／不建議」方案，後者會被拒絕推薦但仍顯示）
-    const originMtrList = this._modeEnabled('mtr')
-      ? this._findNearbyMtrStations(safeOrigin, 1800, 2)
-      : [];
-    const destMtrNearList = this._modeEnabled('mtr')
-      ? this._findNearbyMtrStations(destination, 1200, 2)
-      : [];
-    const destMtrBroadList = this._modeEnabled('mtr')
-      ? this._findNearbyMtrStations(destination, 4500, 2)
-      : [];
+    // 2. 港鐵方案
+    // 若起點／終點本身就是（或名稱匹配）港鐵站，優先 snap 成唯一站，只產生一條純港鐵路徑，
+    // 避免「附近 2 站 × 2 站」組合成多條重複「港鐵 + 步行」路徑。
+    // 例：油塘 → 旺角 應只出現一條「油塘（觀塘綫）→ 旺角」，沒有多餘步行版。
+    const snappedOrigin = this._modeEnabled('mtr') ? this._snapToExactMtrStation(safeOrigin) : null;
+    const snappedDest = this._modeEnabled('mtr') ? this._snapToExactMtrStation(destination) : null;
 
-    const directMtrTargets = destMtrNearList.length ? destMtrNearList : destMtrBroadList;
+    let originMtrList = [];
+    let directMtrTargets = [];
+
     if (this._modeEnabled('mtr')) {
+      if (snappedOrigin && snappedDest && snappedOrigin.station.code !== snappedDest.station.code) {
+        // 兩邊都是港鐵站 → 只走這一對，純港鐵
+        originMtrList = [snappedOrigin];
+        directMtrTargets = [snappedDest];
+      } else {
+        // 一般情況：找附近站；若已 snap 到某一端，該端只保留 1 個
+        originMtrList = snappedOrigin
+          ? [snappedOrigin]
+          : this._findNearbyMtrStations(safeOrigin, 1800, 2);
+        const destMtrNearList = snappedDest
+          ? [snappedDest]
+          : this._findNearbyMtrStations(destination, 1200, 2);
+        const destMtrBroadList = snappedDest
+          ? [snappedDest]
+          : this._findNearbyMtrStations(destination, 4500, 2);
+        directMtrTargets = destMtrNearList.length ? destMtrNearList : destMtrBroadList;
+      }
+
       for (const oSt of originMtrList) {
         for (const dSt of directMtrTargets) {
           if (oSt.station.code === dSt.station.code) continue;
@@ -198,15 +214,21 @@ export class RoutePlanningService {
             : this._evaluateWalk(dSt.loc, destination, 950);
           const mtrSegments = await this._buildMtrSegments(safeOrigin, destination, oSt, dSt, railPath);
           const transferCount = Math.max(0, railPath.legs.length - 1);
+          const lineNames = railPath.legs.map((l) => l.lineName);
+          const linePart = transferCount > 0 ? lineNames.join('→') : (lineNames[0] || '港鐵');
+
+          // 起訖都在港鐵站 → 純港鐵，標題用「油塘（觀塘綫）→ 旺角」
+          const pureMtr = originAtSt && destAtSt;
+          const shortOrigin = (oSt.station.name || '').replace(/站$/, '');
+          const shortDest = (dSt.station.name || '').replace(/站$/, '');
+          const pureLabel = `${shortOrigin}（${linePart}）→ ${shortDest}`;
           const baseLineLabel =
             transferCount > 0
-              ? `港鐵（${railPath.legs.map((l) => l.lineName).join('→')}）`
-              : `港鐵 ${railPath.legs[0].lineName}`;
+              ? `港鐵（${lineNames.join('→')}）`
+              : `港鐵 ${lineNames[0] || ''}`;
 
-          // 起訖都在港鐵站 → 純港鐵，不標「+ 步行」
-          const pureMtr = originAtSt && destAtSt;
           const label = pureMtr
-            ? baseLineLabel
+            ? pureLabel
             : walkCheck.feasible
               ? `${baseLineLabel} + 步行`
               : `${baseLineLabel} + 步行（已拒絕·步行過遠）`;
@@ -595,7 +617,7 @@ export class RoutePlanningService {
       );
     }
 
-    // 去重
+    // 去重（完全相同的路段序列）
     const unique = [];
     const seenKeys = new Set();
     for (const it of candidates) {
@@ -608,8 +630,97 @@ export class RoutePlanningService {
       }
     }
 
-    await this._populateEtas(unique);
-    return unique;
+    // 每個巴士／小巴路線號碼只保留一條最佳路徑（跨不同組合）
+    // 並限制總回傳路徑數（預設 40，可由設定調整）
+    const maxPaths = this._getMaxPaths();
+    const selected = this._selectBestPathsPerBus(unique, maxPaths);
+
+    await this._populateEtas(selected);
+    return selected;
+  }
+
+  /** 路徑結果上限（設定可調 20–80，預設 40） */
+  _getMaxPaths() {
+    const n = this.settingsService?.get?.('maxPaths');
+    if (Number.isFinite(n) && n >= 20 && n <= 80) return Math.round(n);
+    return 40;
+  }
+
+  /**
+   * 從候選路徑中選出最佳方案：
+   * - 優先單一交通工具（港鐵／巴士／小巴／輕鐵／步行），再補組合轉乘
+   * - 同一巴士／小巴路線號碼最多只出現在一條路徑
+   * - 總數上限 maxPaths（預設 40）
+   * - 同層級內：實用優先 → 步數少 → 總時長短 → 轉乘少
+   */
+  _selectBestPathsPerBus(candidates, maxPaths = 40) {
+    const normRoute = (route) => {
+      if (!route) return null;
+      return String(route)
+        .replace(/號巴士/g, '')
+        .replace(/專線小巴\s*/g, '')
+        .replace(/小巴\s*/g, '')
+        .replace(/九巴\s*/g, '')
+        .replace(/\s+/g, '')
+        .trim()
+        .toUpperCase();
+    };
+
+    const scoreOf = (it) => {
+      const transitSegs = it.segments.filter((s) => s.isTransit());
+      const transitModes = new Set(transitSegs.map((s) => s.mode));
+      // 單一交通工具：最多一種大眾運輸模式（可附帶步行接駁）
+      const isSingleMode = transitModes.size <= 1;
+      const stepCount = it.segments.length;
+      const duration = Number.isFinite(it.totalDuration)
+        ? it.totalDuration
+        : it.segments.reduce((a, s) => a + (s.duration || 0) + (s.waitTime || 0), 0);
+      const transfers = Math.max(0, transitSegs.length - 1);
+      const impractical = it.isImpracticalWalk ? 1 : 0;
+      return { isSingleMode: isSingleMode ? 0 : 1, stepCount, duration, transfers, impractical };
+    };
+
+    // 排序：實用 → 單一交通優先 → 步數少 → 時長短 → 轉乘少
+    const ranked = [...candidates].sort((a, b) => {
+      const sa = scoreOf(a);
+      const sb = scoreOf(b);
+      if (sa.impractical !== sb.impractical) return sa.impractical - sb.impractical;
+      if (sa.isSingleMode !== sb.isSingleMode) return sa.isSingleMode - sb.isSingleMode;
+      if (sa.stepCount !== sb.stepCount) return sa.stepCount - sb.stepCount;
+      if (sa.duration !== sb.duration) return sa.duration - sb.duration;
+      return sa.transfers - sb.transfers;
+    });
+
+    const usedBusRoutes = new Set();
+    const selected = [];
+    const tryAdd = (it) => {
+      if (selected.length >= maxPaths) return false;
+      if (selected.includes(it)) return false;
+      const busRoutes = it.segments
+        .filter((s) => s.mode === 'bus' || s.mode === 'minibus')
+        .map((s) => normRoute(s.route))
+        .filter(Boolean);
+      if (busRoutes.some((r) => usedBusRoutes.has(r))) return false;
+      for (const r of busRoutes) usedBusRoutes.add(r);
+      selected.push(it);
+      return true;
+    };
+
+    // 第一輪：只收單一交通工具路徑
+    for (const it of ranked) {
+      if (selected.length >= maxPaths) break;
+      if (scoreOf(it).isSingleMode !== 0) continue;
+      tryAdd(it);
+    }
+
+    // 第二輪：再收組合轉乘路徑
+    for (const it of ranked) {
+      if (selected.length >= maxPaths) break;
+      if (scoreOf(it).isSingleMode === 0) continue;
+      tryAdd(it);
+    }
+
+    return selected;
   }
 
   _pruneTrivialWalkSegments(segments, origin, destination) {
@@ -824,23 +935,91 @@ export class RoutePlanningService {
    */
   _isAtMtrStation(loc, stationLoc, station) {
     if (!loc || !stationLoc) return false;
+    // 來源標記為 mtr（來自港鐵站自動完成）→ 直接視為站內
+    if (loc.source === 'mtr') return true;
     const norm = (s) =>
       String(s || '')
         .replace(/站.*$/, '')
         .replace(/（.*）/, '')
+        .replace(/\(.*\)/, '')
         .replace(/\s+/g, '')
         .trim()
         .toLowerCase();
     const locName = norm(loc.name);
     const stName = norm(station?.name || stationLoc.name);
+    const stEn = norm(station?.en);
     if (locName && stName && (locName === stName || locName.includes(stName) || stName.includes(locName))) {
       return true;
     }
-    // 來源標記為 mtr，或距離極近（站體範圍內）
-    if (loc.source === 'mtr') return true;
+    if (locName && stEn && (locName === stEn || locName.includes(stEn) || stEn.includes(locName))) {
+      return true;
+    }
+    // 距離極近（站體範圍內，約 150m）
     const d = loc.distanceTo?.(stationLoc);
-    if (d != null && d <= 120) return true;
+    if (d != null && d <= 150) return true;
     return false;
+  }
+
+  /**
+   * 若地點本身就是（或非常接近／名稱匹配）港鐵站，回傳該站物件，否則 null。
+   * 用於把「油塘」「Yau Tong」「油塘站」「yautong」「mk」等自動 snap 成唯一港鐵站，
+   * 避免產生多餘「附近站 + 步行」路徑。
+   */
+  _snapToExactMtrStation(loc) {
+    if (!loc) return null;
+    const norm = (s) =>
+      String(s || '')
+        .replace(/站.*$/, '')
+        .replace(/（.*）/, '')
+        .replace(/\(.*\)/, '')
+        .replace(/\s+/g, '')
+        .trim()
+        .toLowerCase();
+    const locName = norm(loc.name);
+
+    // 來源已是 mtr：取最近站（應極近）
+    if (loc.source === 'mtr' && loc.hasCoords) {
+      const near = this._findNearbyMtrStationsRaw(loc, 250, 1);
+      if (near.length && near[0].distance <= 250) return near[0];
+    }
+
+    if (locName) {
+      for (const st of HK_MTR_STATIONS) {
+        const stName = norm(st.name);
+        const stEn = norm(st.en);
+        // 常見簡寫：mk → 旺角, yt → 油塘 等可透過 en/name includes 覆蓋
+        if (
+          locName === stName ||
+          locName === stEn ||
+          (stName && (locName.includes(stName) || stName.includes(locName))) ||
+          (stEn && (locName.includes(stEn) || stEn.includes(locName)))
+        ) {
+          const stLoc = new Location({ name: st.name, lat: st.lat, lng: st.lng, source: 'mtr' });
+          const dist = loc.hasCoords ? (loc.distanceTo(stLoc) ?? 0) : 0;
+          if (!loc.hasCoords || dist <= 500) {
+            return { station: st, loc: stLoc, distance: dist };
+          }
+        }
+      }
+    }
+
+    // 極近距離 snap
+    if (loc.hasCoords) {
+      const near = this._findNearbyMtrStationsRaw(loc, 120, 1);
+      if (near.length && near[0].distance <= 120) return near[0];
+    }
+    return null;
+  }
+
+  /** 內部用：不強制「已在站內只回 1 個」的 raw 搜尋 */
+  _findNearbyMtrStationsRaw(loc, maxDist = 1600, limit = 2) {
+    if (!loc?.hasCoords) return [];
+    const all = HK_MTR_STATIONS.map((st) => {
+      const stLoc = new Location({ name: st.name, lat: st.lat, lng: st.lng, source: 'mtr' });
+      return { station: st, loc: stLoc, distance: loc.distanceTo(stLoc) ?? Infinity };
+    }).sort((a, b) => a.distance - b.distance);
+    const within = all.filter((x) => x.distance <= maxDist).slice(0, limit);
+    return within.length ? within : all.length ? [all[0]] : [];
   }
 
   async _buildMtrSegments(origin, destination, oSt, dSt, railPath) {
@@ -1379,8 +1558,16 @@ export class RoutePlanningService {
       return { station: st, loc: stLoc, distance: loc.distanceTo(stLoc) ?? Infinity };
     }).sort((a, b) => a.distance - b.distance);
 
+    // 若最近站已在站體範圍內或名稱匹配，只回傳該站，避免多餘「附近站 + 步行」
+    if (all.length && all[0].distance <= 150) {
+      return [all[0]];
+    }
+    if (all.length && this._isAtMtrStation(loc, all[0].loc, all[0].station)) {
+      return [all[0]];
+    }
+
     const within = all.filter((x) => x.distance <= maxDist).slice(0, limit);
-    return within.length ? within : [all[0]];
+    return within.length ? within : (all.length ? [all[0]] : []);
   }
 
   _pickExitForDestination(station, destination) {

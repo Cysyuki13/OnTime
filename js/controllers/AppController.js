@@ -128,6 +128,15 @@ export class AppController {
         await this.eventService.updateEventDetails(id, details);
         this._showDetail(id);
       },
+      onSaveUserPath: (baseItId, edits) => {
+        const result = this.eventService.saveUserPath(id, baseItId, edits, {
+          labelSuffix: '（自訂）',
+          select: true,
+        });
+        if (result?.saved) {
+          this._showDetail(id);
+        }
+      },
     });
     LoadingView.hideDimmer();
     this.root.innerHTML = view.render(event);

@@ -47,10 +47,14 @@ export const COLOR_THEMES = Object.freeze({
   },
 });
 
+/** 路徑結果數量可選值（步進 10） */
+export const MAX_PATHS_OPTIONS = Object.freeze([20, 30, 40, 50, 60, 70, 80]);
+
 const DEFAULTS = Object.freeze({
   walkSpeedLevel: 5,
   bufferMinutes: 5,
   arriveBeforeMinutes: 15,
+  maxPaths: 40,
   themeMode: 'dark', // 'dark' | 'light' | 'system'
   colorTheme: 'amber',
   notificationsEnabled: true,
@@ -77,10 +81,18 @@ export class SettingsService {
   _load() {
     const raw = this.storage.get('settings', null);
     if (!raw || typeof raw !== 'object') return { ...DEFAULTS, preferredModes: { ...DEFAULTS.preferredModes } };
+    const maxPathsRaw = this._clampInt(raw.maxPaths, 20, 80, DEFAULTS.maxPaths);
+    // 對齊到 10 的倍數（20, 30, … 80）
+    const maxPaths = MAX_PATHS_OPTIONS.includes(maxPathsRaw)
+      ? maxPathsRaw
+      : MAX_PATHS_OPTIONS.reduce((best, n) =>
+          Math.abs(n - maxPathsRaw) < Math.abs(best - maxPathsRaw) ? n : best
+        , DEFAULTS.maxPaths);
     return {
       walkSpeedLevel: this._clampInt(raw.walkSpeedLevel, 1, 10, DEFAULTS.walkSpeedLevel),
       bufferMinutes: this._clampInt(raw.bufferMinutes, 0, 30, DEFAULTS.bufferMinutes),
       arriveBeforeMinutes: this._clampInt(raw.arriveBeforeMinutes, 0, 120, DEFAULTS.arriveBeforeMinutes),
+      maxPaths,
       themeMode: ['dark', 'light', 'system'].includes(raw.themeMode) ? raw.themeMode : DEFAULTS.themeMode,
       colorTheme: COLOR_THEMES[raw.colorTheme] ? raw.colorTheme : DEFAULTS.colorTheme,
       notificationsEnabled: raw.notificationsEnabled !== false,
@@ -157,6 +169,14 @@ export class SettingsService {
         this._settings.arriveBeforeMinutes
       );
     }
+    if (partial.maxPaths != null) {
+      const n = this._clampInt(partial.maxPaths, 20, 80, this._settings.maxPaths);
+      this._settings.maxPaths = MAX_PATHS_OPTIONS.includes(n)
+        ? n
+        : MAX_PATHS_OPTIONS.reduce((best, v) =>
+            Math.abs(v - n) < Math.abs(best - n) ? v : best
+          , DEFAULTS.maxPaths);
+    }
     if (partial.themeMode != null && ['dark', 'light', 'system'].includes(partial.themeMode)) {
       this._settings.themeMode = partial.themeMode;
     }
@@ -226,5 +246,39 @@ export class SettingsService {
     const mpm = WALK_SPEED_LEVELS[level] ?? WALK_SPEED_LEVELS[5];
     const minsFor1km = Math.round((1000 / mpm) * 10) / 10;
     return `約 ${mpm} 米/分 · 走 1000 米需約 ${minsFor1km} 分鐘`;
+  }
+
+  /**
+   * 路徑數量對載入時間的說明（供設定頁即時顯示）
+   * @param {number} maxPaths
+   */
+  static maxPathsLoadHint(maxPaths) {
+    const n = Number(maxPaths) || 40;
+    if (n <= 20) {
+      return {
+        level: 'fast',
+        label: '較快',
+        text: '結果較少，規劃與顯示通常較快；適合只想看主要方案。',
+      };
+    }
+    if (n <= 40) {
+      return {
+        level: 'balanced',
+        label: '均衡',
+        text: '預設範圍，兼顧方案多樣性與載入速度。',
+      };
+    }
+    if (n <= 60) {
+      return {
+        level: 'slower',
+        label: '較慢',
+        text: '方案較多，搜尋與 ETA 計算會稍長；適合想比較更多接駁組合。',
+      };
+    }
+    return {
+      level: 'slow',
+      label: '明顯較慢',
+      text: '最多結果，規劃與載入時間明顯增加，可能需多等數秒，尤其在較慢裝置上。',
+    };
   }
 }

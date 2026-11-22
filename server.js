@@ -6,7 +6,7 @@
  *
  * Usage:
  *   node server.js
- *   open http://127.0.0.1:3004
+ *   open http://127.0.0.1:3000
  */
 const http = require('http');
 const https = require('https');
@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
-const PORT = Number(process.env.PORT) || 3004;
+const PORT = Number(process.env.PORT) || 3000;
 const ROOT = __dirname;
 const KMB_UPSTREAM = 'https://data.etabus.gov.hk/v1/transport/kmb';
 
@@ -139,7 +139,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`HK Transit Timer dev server`);
+  console.log(`Teiji HK (天時-香港) dev server`);
   console.log(`  App:  http://127.0.0.1:${PORT}/`);
   console.log(`  KMB:  http://127.0.0.1:${PORT}/api/kmb/stop/`);
   console.log(`  Proxy → ${KMB_UPSTREAM}`);

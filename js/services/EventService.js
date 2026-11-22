@@ -79,6 +79,61 @@ export class EventService {
     return event;
   }
 
+  /**
+   * 將使用者編輯後的路徑另存為「user-saved」自訂路徑。
+   * edits: Array<{ segIndex, boardStop?, alightStop?, fromName?, toName?, exit?, route? }>
+   * 會 clone 原路徑、套用站點修改、標記 isCustomized，並加入 event.itineraries。
+   */
+  saveUserPath(eventId, baseItineraryId, edits = [], { labelSuffix = '（自訂）', select = true } = {}) {
+    const event = this.getById(eventId);
+    if (!event) return null;
+    const base = event.itineraries.find((i) => i.id === baseItineraryId);
+    if (!base) return null;
+
+    const cloned = base.clone();
+    cloned.id = crypto?.randomUUID?.() ?? `it-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    cloned.isCustomized = true;
+    cloned.isUserSaved = true;
+    cloned.label = (base.label || '方案').replace(/（自訂）$/, '') + labelSuffix;
+
+    const byIndex = new Map((edits || []).map((e) => [Number(e.segIndex), e]));
+    for (let i = 0; i < cloned.segments.length; i++) {
+      const edit = byIndex.get(i);
+      if (!edit) continue;
+      const seg = cloned.segments[i];
+      if (edit.boardStop != null && String(edit.boardStop).trim()) {
+        seg.boardStop = String(edit.boardStop).trim();
+        if (seg.from) seg.from = new Location({ ...seg.from.toJSON?.() ?? seg.from, name: seg.boardStop });
+      }
+      if (edit.alightStop != null && String(edit.alightStop).trim()) {
+        seg.alightStop = String(edit.alightStop).trim();
+        if (seg.to) seg.to = new Location({ ...seg.to.toJSON?.() ?? seg.to, name: seg.alightStop });
+      }
+      if (edit.fromName != null && String(edit.fromName).trim() && seg.from) {
+        seg.from = new Location({ ...seg.from.toJSON?.() ?? seg.from, name: String(edit.fromName).trim() });
+      }
+      if (edit.toName != null && String(edit.toName).trim() && seg.to) {
+        seg.to = new Location({ ...seg.to.toJSON?.() ?? seg.to, name: String(edit.toName).trim() });
+      }
+      if (edit.exit != null) seg.exit = String(edit.exit).trim() || null;
+      if (edit.route != null && String(edit.route).trim()) seg.route = String(edit.route).trim();
+    }
+
+    // 重新計算時間（沿用既有 duration，只刷新 latestDeparture / arrival 顯示）
+    const recomputed = this.calculator.computeAll([cloned], new Date(), event.targetArrival);
+    const saved = recomputed[0] || cloned;
+    saved.isCustomized = true;
+    saved.isUserSaved = true;
+    saved.label = cloned.label;
+
+    event.itineraries = [...event.itineraries, saved];
+    if (select) {
+      event.chosenItineraryId = saved.id;
+    }
+    this._persist(event);
+    return { event, saved };
+  }
+
   async toggleItineraryNotification(eventId, itineraryId, enabled) {
     const event = this.getById(eventId);
     const it = event?.itineraries.find((i) => i.id === itineraryId);
@@ -137,6 +192,7 @@ export class EventService {
         arriveBy: event.targetArrival,
       });
       const chosenLabel = event.chosenItinerary?.label ?? null;
+      const chosenId = event.chosenItineraryId;
       const customizationMap = new Map(
         event.itineraries.map((i) => [
           i.label,
@@ -151,8 +207,12 @@ export class EventService {
           it.isCustomized = custom.isCustomized;
         }
       }
-      event.itineraries = this.calculator.computeAll(fresh, new Date(), event.targetArrival);
-      const matchedChosen = chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null;
+      const userSaved = event.itineraries.filter((i) => i.isUserSaved);
+      const recomputed = this.calculator.computeAll(fresh, new Date(), event.targetArrival);
+      event.itineraries = [...recomputed, ...userSaved];
+      const matchedChosen =
+        (chosenId && event.itineraries.find((i) => i.id === chosenId)) ||
+        (chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null);
       event.chosenItineraryId = matchedChosen?.id ?? event.bestItinerary?.id ?? null;
     } else {
       event.itineraries = this.calculator.computeAll(event.itineraries, new Date(), event.targetArrival);
@@ -179,6 +239,7 @@ export class EventService {
     });
 
     const chosenLabel = event.chosenItinerary?.label ?? null;
+    const chosenId = event.chosenItineraryId;
     const customizationMap = new Map(
       event.itineraries.map((i) => [
         i.label,
@@ -194,8 +255,19 @@ export class EventService {
       }
     }
 
-    event.itineraries = this.calculator.computeAll(fresh, new Date(), newTargetArrival);
-    const matchedChosen = chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null;
+    const userSaved = event.itineraries.filter((i) => i.isUserSaved);
+    // 自訂路徑也依新目標到達時間重算顯示
+    const userSavedRecomputed = this.calculator.computeAll(userSaved, new Date(), newTargetArrival);
+    for (const it of userSavedRecomputed) {
+      it.isUserSaved = true;
+      it.isCustomized = true;
+    }
+
+    const recomputed = this.calculator.computeAll(fresh, new Date(), newTargetArrival);
+    event.itineraries = [...recomputed, ...userSavedRecomputed];
+    const matchedChosen =
+      (chosenId && event.itineraries.find((i) => i.id === chosenId)) ||
+      (chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null);
     event.chosenItineraryId = matchedChosen?.id ?? event.bestItinerary?.id ?? null;
 
     await this.notificationService.cancel(event.notificationIds ?? []);
@@ -218,6 +290,7 @@ export class EventService {
     });
 
     const chosenLabel = event.chosenItinerary?.label ?? null;
+    const chosenId = event.chosenItineraryId;
     const customizationMap = new Map(
       event.itineraries.map((i) => [
         i.label,
@@ -233,8 +306,14 @@ export class EventService {
       }
     }
 
-    event.itineraries = this.calculator.computeAll(fresh, new Date(), event.targetArrival);
-    const matchedChosen = chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null;
+    // 保留使用者另存的自訂路徑
+    const userSaved = event.itineraries.filter((i) => i.isUserSaved);
+
+    const recomputed = this.calculator.computeAll(fresh, new Date(), event.targetArrival);
+    event.itineraries = [...recomputed, ...userSaved];
+    const matchedChosen =
+      (chosenId && event.itineraries.find((i) => i.id === chosenId)) ||
+      (chosenLabel ? event.itineraries.find((i) => i.label === chosenLabel) : null);
     event.chosenItineraryId = matchedChosen?.id ?? event.bestItinerary?.id ?? null;
 
     await this.notificationService.cancel(event.notificationIds ?? []);
