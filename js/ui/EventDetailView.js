@@ -57,81 +57,138 @@ export class EventDetailView {
       const isChosen = event.chosenItineraryId === it.id;
       const isShortest = shortestId === it.id;
       const isOpen = this._expandedIds.has(it.id);
-      const totalStr = it.totalDuration != null ? `約 ${it.totalDuration} 分鐘` : '—';
+      const durationNum = it.totalDuration;
+      const durationBig =
+        durationNum != null
+          ? `<span class="it-duration-num">${durationNum}</span><span class="it-duration-unit">分鐘</span>`
+          : '<span class="it-duration-num">—</span>';
       const modesInvolved = this._modesInvolved(it);
+      const originName = event.origin?.name || it.segments[0]?.from?.name || '起點';
+      const destName =
+        event.destination?.name ||
+        it.segments[it.segments.length - 1]?.to?.name ||
+        it.segments[it.segments.length - 1]?.alightStop ||
+        '終點';
+      const startTime = fmt(it.segments[0]?.departAt || it.latestDeparture);
+      const endTime = fmt(it.estimatedArrival);
 
-      const segmentsHtml = it.segments
+      // Timeline legs — no nested boxes; vertical rail + nodes
+      const legsHtml = it.segments
         .map((s, idx) => {
-          const meta = ModeMeta[s.mode] || { icon: '·', label: s.mode };
-          const detail = s.displayDetail;
-          const timeRange = `${fmt(s.departAt)} → ${fmt(s.arriveAt)}`;
+          const meta = ModeMeta[s.mode] || { label: s.mode };
+          const isWalk = s.mode === 'walk';
+          const board = s.boardStop || s.from?.name || '';
+          const alight = s.alightStop || s.to?.name || '';
+          const routeChip = s.route ? `<span class="route-chip">${this._esc(s.route)}</span>` : '';
+          const dir = s.direction ? `<span class="leg-dir">${this._esc(s.direction)}</span>` : '';
+          const dur =
+            s.duration != null
+              ? isWalk
+                ? `${s.duration} 分鐘`
+                : `車程 ${s.duration} 分鐘`
+              : '';
+          const etaBit = s.eta
+            ? `${s.isRealEta ? '實時' : '推算'} ${fmt(s.eta)}`
+            : s.departAt
+              ? fmt(s.departAt)
+              : '';
+
           return `
-              <div class="segment" data-seg-idx="${idx}" data-it-id="${it.id}" title="點擊在地圖高亮此段路徑">
-                <div class="segment-icon">${modeIconHtml(s.mode, { size: 20 })}</div>
-                <div class="segment-info">
-                  <div class="segment-mode">${meta.label}${s.route ? ` <span class="route-chip">${s.route}</span>` : ''}</div>
-                  <div class="segment-detail">${this._esc(detail)}</div>
-                </div>
-                <div class="segment-time">${timeRange}</div>
+            <div class="tl-leg ${isWalk ? 'is-walk' : 'is-transit'}" data-seg-idx="${idx}" data-it-id="${it.id}" title="點擊在地圖高亮此段">
+              <div class="tl-rail">
+                <span class="tl-dot ${isWalk ? 'dot-walk' : 'dot-transit'}"></span>
+                <span class="tl-line ${isWalk ? 'line-dashed' : 'line-solid'}"></span>
               </div>
-            `;
+              <div class="tl-leg-body">
+                <div class="tl-leg-head">
+                  <span class="tl-leg-icon">${modeIconHtml(s.mode, { size: 18 })}</span>
+                  <span class="tl-leg-mode">${meta.label}${routeChip ? ' ' + routeChip : ''}</span>
+                  ${dir}
+                  <span class="tl-leg-dur">${this._esc(dur)}</span>
+                </div>
+                <div class="tl-leg-stops">
+                  <span class="tl-stop-from">${this._esc(board)}</span>
+                  <span class="tl-stop-arrow">→</span>
+                  <span class="tl-stop-to">${this._esc(alight)}</span>
+                </div>
+                ${etaBit ? `<div class="tl-leg-eta">${this._esc(etaBit)}</div>` : ''}
+              </div>
+              <div class="tl-leg-time">${fmt(s.departAt)}${s.arriveAt ? ` → ${fmt(s.arriveAt)}` : ''}</div>
+            </div>
+          `;
         })
         .join('');
 
       const badges = [
         it.isImpracticalWalk ? '<span class="card-badge danger">已拒絕·步行過遠</span>' : '',
         !it.isImpracticalWalk && isShortest ? '<span class="card-badge warning">最短時間 · 推薦</span>' : '',
-        isChosen ? '<span class="card-badge success">已選</span>' : '',
-        it.isUserSaved ? '<span class="card-badge info">自訂路徑</span>' : it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
+                it.isUserSaved ? '<span class="card-badge info">自訂路徑</span>' : it.isCustomized ? '<span class="card-badge info">已自訂</span>' : '',
       ]
         .filter(Boolean)
         .join('');
 
       const modeIcons = this._renderModeIconStrip(modesInvolved);
 
+      const routeSummaryHtml = this._buildRouteSummaryChain(it, originName, destName);
+
       return `
-          <div class="card itinerary-card ${isChosen ? 'itinerary-chosen' : ''} ${isOpen ? 'is-expanded' : ''}" data-itinerary-id="${it.id}">
+          <div class="card itinerary-card ${isChosen ? 'is-selected' : ''} ${isOpen ? 'is-expanded' : ''}" data-itinerary-id="${it.id}">
             <div class="itinerary-header" data-action="toggle-expand" data-id="${it.id}" role="button" tabindex="0" aria-expanded="${isOpen}">
-              <div class="itinerary-header-main">
-                <div class="card-title">
-                  <span>${this._esc(it.label)}</span>
-                  ${badges}
+              <div class="itinerary-header-top">
+                <div class="route-summary-scroll-container" title="${this._esc(it.label)}">
+                  ${routeSummaryHtml}
                 </div>
-                <div class="itinerary-meta-row">
-                  <span class="card-total-time">${totalStr}</span>
-                  <span class="card-sub">
-                    ${it.summary} · 最遲出發 ${fmt(it.latestDeparture)} · 到達 ${fmt(it.estimatedArrival)}
-                  </span>
-                </div>
+                <span class="itinerary-chevron" aria-hidden="true">▼</span>
               </div>
-              <div class="itinerary-header-right">
-                ${modeIcons}
-                <button type="button" class="itinerary-toggle-btn" data-action="toggle-expand" data-id="${it.id}">
-                  <span class="toggle-text">${isOpen ? '收合' : '展開詳情'}</span>
-                  <span class="itinerary-chevron">▼</span>
-                </button>
+              <div class="itinerary-header-bottom">
+                <div class="it-summary-row">
+                  <div class="it-duration">${durationBig}</div>
+                  <div class="it-summary-meta">
+                    <span class="it-summary-arrive">預計到達 <strong>${endTime}</strong></span>
+                    <span class="it-summary-depart">最遲出發 ${fmt(it.latestDeparture)}</span>
+                  </div>
+                </div>
+                <div class="itinerary-header-meta">
+                  <span class="it-badges">${badges}</span>
+                  ${modeIcons}
+                </div>
               </div>
             </div>
 
             <div class="itinerary-body" data-body-for="${it.id}" ${isOpen ? '' : 'hidden'}>
-              <div class="endpoint-row">
-                <span class="endpoint-badge endpoint-start">START · 起點</span>
-                <span class="endpoint-label">${this._esc(event.origin?.name || it.segments[0]?.from?.name || '起點')}</span>
-                <span class="endpoint-time">${fmt(it.segments[0]?.departAt)}</span>
-              </div>
-              ${segmentsHtml}
-              <div class="endpoint-row">
-                <span class="endpoint-badge endpoint-end">END · 終點</span>
-                <span class="endpoint-label">${this._esc(event.destination?.name || it.segments[it.segments.length - 1]?.to?.name || '終點')}</span>
-                <span class="endpoint-time">${fmt(it.estimatedArrival)}</span>
+              <div class="tl-timeline">
+                <div class="tl-node tl-start">
+                  <div class="tl-rail">
+                    <span class="tl-dot dot-start"></span>
+                    <span class="tl-line line-solid"></span>
+                  </div>
+                  <div class="tl-node-body">
+                    <span class="tl-node-tag">START</span>
+                    <span class="tl-node-name">${this._esc(originName)}</span>
+                  </div>
+                  <div class="tl-node-time">${startTime}</div>
+                </div>
+
+                ${legsHtml}
+
+                <div class="tl-node tl-end">
+                  <div class="tl-rail">
+                    <span class="tl-dot dot-end"></span>
+                  </div>
+                  <div class="tl-node-body">
+                    <span class="tl-node-tag">END</span>
+                    <span class="tl-node-name">${this._esc(destName)}</span>
+                  </div>
+                  <div class="tl-node-time">${endTime}</div>
+                </div>
               </div>
 
               ${it.impracticalReason ? `<div class="itinerary-reject-note">${this._esc(it.impracticalReason)}</div>` : ''}
               ${it.remarks ? `<div class="itinerary-remarks">${this._esc(it.remarks)}</div>` : ''}
 
               <div class="itinerary-actions">
-                <button type="button" class="btn btn-ghost btn-sm" data-action="select" data-id="${it.id}">
-                  ${isChosen ? '已選此方案' : '選擇此方案'}
+                <button type="button" class="btn ${isChosen ? 'btn-ghost is-chosen-btn' : 'btn-ghost'} btn-sm touch-target" data-action="select" data-id="${it.id}" ${isChosen ? 'disabled aria-pressed="true"' : 'aria-pressed="false"'}>
+                  ${isChosen ? '目前方案' : '選擇此方案'}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="edit-path" data-id="${it.id}">編輯路徑</button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="remarks" data-id="${it.id}">備註</button>
@@ -398,6 +455,12 @@ export class EventDetailView {
     this._pageRoot = root;
     this._mapView.bind(root);
     this._bindComboFilter(root);
+
+    // Horizontal swipe on route summary must not toggle card expand
+    root.querySelectorAll('.route-summary-scroll-container').forEach((el) => {
+      el.addEventListener('click', (e) => e.stopPropagation());
+      el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    });
     const activeIt = this._event?.chosenItinerary || this._event?.bestItinerary || this._event?.itineraries?.[0];
     if (activeIt) {
       this._mapView.setItinerary(activeIt, {
@@ -696,6 +759,69 @@ export class EventDetailView {
     return set;
   }
 
+  /**
+   * Multi-node route summary:
+   * [origin] ➔ 🚇 mode ➔ [transfer] ➔ 🚌 mode ➔ [dest]
+   * Walk between stations → small walk icon only (no label).
+   */
+  _buildRouteSummaryChain(it, originName, destName) {
+    const segs = it?.segments || [];
+    const parts = [];
+    const arrow = '<span class="arrow">➔</span>';
+
+    const stationHtml = (name, kind) => {
+      const n = String(name || '').trim() || '—';
+      const cls = kind === 'main' ? 'location main-station' : 'location transfer-station';
+      return `<span class="${cls}" title="${this._esc(n)}">${this._esc(n)}</span>`;
+    };
+
+    const transitHtml = (mode, route) => {
+      const meta = ModeMeta[mode] || { label: mode };
+      let name = meta.label || mode;
+      if (route) name = `${name} ${route}`.trim();
+      return `<div class="transit-indicator">
+        <span class="mode-icon">${modeIconHtml(mode, { size: 14, className: 'mode-icon-img' })}</span>
+        <span class="mode-name">${this._esc(name)}</span>
+      </div>`;
+    };
+
+    const walkMini = () =>
+      `<div class="transit-indicator is-walk-mini" title="步行">
+        <span class="mode-icon">${modeIconHtml('walk', { size: 12, className: 'mode-icon-img' })}</span>
+      </div>`;
+
+    if (!segs.length) {
+      parts.push(stationHtml(originName, 'main'));
+      parts.push(arrow);
+      parts.push(transitHtml('walk'));
+      parts.push(arrow);
+      parts.push(stationHtml(destName, 'main'));
+      return `<div class="route-summary">${parts.join('')}</div>`;
+    }
+
+    const firstFrom = segs[0].boardStop || segs[0].from?.name || originName || '起點';
+    parts.push(stationHtml(firstFrom, 'main'));
+
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i];
+      const isWalk = s.mode === 'walk';
+      const isLast = i === segs.length - 1;
+      const toName =
+        s.alightStop || s.to?.name || (isLast ? destName : '') || '—';
+
+      parts.push(arrow);
+      if (isWalk) {
+        parts.push(walkMini());
+      } else {
+        parts.push(transitHtml(s.mode, s.route));
+      }
+      parts.push(arrow);
+      parts.push(stationHtml(toName, isLast ? 'main' : 'transfer'));
+    }
+
+    return `<div class="route-summary">${parts.join('')}</div>`;
+  }
+
   _renderModeIconStrip(modesInvolved) {
     // Fixed order strip; lit when involved
     const order = [
@@ -709,7 +835,7 @@ export class EventDetailView {
     const cells = order
       .map((o) => {
         const on = modesInvolved.has(o.mode);
-        return `<span class="mode-type-icon ${on ? 'is-on' : 'is-off'}" title="${o.title}${on ? '（本方案使用）' : ''}" data-mode="${o.mode}">${modeIconHtml(o.mode, { size: 16 })}</span>`;
+        return `<span class="mode-type-icon ${on ? 'is-on' : 'is-off'}" title="${o.title}${on ? '（本方案使用）' : ''}" data-mode="${o.mode}">${modeIconHtml(o.mode, { size: 20 })}</span>`;
       })
       .join('');
     return `<div class="mode-type-strip" aria-label="交通方式">${cells}</div>`;

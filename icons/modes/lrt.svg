@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs/>
   <rect width="64" height="64" rx="12" fill="#C45C26"/>
+  <path d="M32 12v6" stroke="#4a4a4a" stroke-width="1.5" stroke-linecap="round"/>
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 48h24" stroke="#d9d9d9" stroke-width="3" stroke-linecap="round" transform="translate(114.67 55.67) rotate(51.28) scale(-0.725 0.899) skewX(26.9)" fill="#2f6df6"/>
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 48h24" stroke="#d9d9d9" stroke-width="3" stroke-linecap="round" transform="translate(-51.03 55.69) rotate(-51.13) scale(0.727 0.902) skewX(27.19)" fill="#2f6df6"/>
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 48h24" stroke="#d9d9d9" stroke-width="3" stroke-linecap="round" transform="translate(65.34 -4.03) rotate(-0.28) scale(-1.007 1.029) skewX(1.61)" fill="#2f6df6"/>
+  <path xmlns="http://www.w3.org/2000/svg" d="M20 48h24" stroke="#d9d9d9" stroke-width="3" stroke-linecap="round" transform="translate(73.62 -9.96) rotate(-0.28) scale(-1.257 1.285) skewX(1.61)" fill="#2f6df6"/>
   <rect x="14" y="18" width="36" height="24" rx="4" fill="#fff"/>
-  <rect x="18" y="22" width="12" height="9" rx="1.2" fill="#C45C26"/>
-  <rect x="34" y="22" width="12" height="9" rx="1.2" fill="#C45C26"/>
-  <path d="M20 48h24" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <rect x="18" y="22" width="12" height="9" rx="1.2" fill="#363636"/>
+  <rect xmlns="http://www.w3.org/2000/svg" x="18" y="22" width="12" height="9" rx="1.2" fill="#e6de00" transform="translate(6.97 31.51) scale(0.583 0.274)"/>
+  <rect xmlns="http://www.w3.org/2000/svg" x="18" y="22" width="12" height="9" rx="1.2" fill="#e6de00" transform="translate(29.05 31.51) scale(0.583 0.274)"/>
+  <rect x="34" y="22" width="12" height="9" rx="1.2" fill="#363636"/>
   <circle cx="22" cy="44" r="4" fill="#fff"/>
   <circle cx="42" cy="44" r="4" fill="#fff"/>
-  <path d="M32 12v6" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <line x1="16.92" y1="20.35" x2="46" y2="20.5" fill="none" stroke="#a80000" stroke-width="2" stroke-linecap="round" transform="translate(0.54 -0.31)"/>
+  <path xmlns="http://www.w3.org/2000/svg" d="M32 12v6" stroke="#4a4a4a" stroke-width="1.5" stroke-linecap="round" transform="translate(46.8 -18.83) rotate(89.64)"/>
+  <line x1="22" y1="32" x2="42" y2="32" fill="none" stroke="#a80000" stroke-width="2" stroke-linecap="round"/>
 </svg>
