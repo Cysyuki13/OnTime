@@ -1,0 +1,468 @@
+/* ============================================================
+   3D 沿路預覽（Cesium + 地政總署 可視化三維地圖）
+   沿用終端機風格：方角、等寬字、金色強調
+   ============================================================ */
+
+.r3d-open {
+  overflow: hidden;
+}
+
+.r3d-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0a0c10;
+  color: var(--text);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+
+.r3d-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.r3d-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* 即使 Cesium 的 widgets.css 未載入，容器亦要全螢幕 */
+.r3d-stage .cesium-viewer,
+.r3d-stage .cesium-viewer-cesiumWidgetContainer,
+.r3d-stage .cesium-widget {
+  width: 100%;
+  height: 100%;
+}
+
+.r3d-stage .cesium-viewer-bottom {
+  display: none;
+}
+
+.r3d-stage .cesium-viewer-toolbar,
+.r3d-stage .cesium-viewer-animationContainer,
+.r3d-stage .cesium-viewer-timelineContainer,
+.r3d-stage .cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+
+/* ---------------- top bar ---------------- */
+
+.r3d-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 26px;
+  background: linear-gradient(180deg, rgba(8, 10, 13, 0.92), rgba(8, 10, 13, 0));
+  pointer-events: none;
+}
+
+.r3d-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.r3d-kicker {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.r3d-title {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r3d-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r3d-close {
+  pointer-events: auto;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  background: rgba(20, 22, 25, 0.8);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.r3d-close:active {
+  background: rgba(216, 162, 74, 0.16);
+}
+
+/* ---------------- loading ---------------- */
+
+.r3d-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 45%, rgba(24, 27, 32, 0.92), rgba(8, 10, 13, 0.98));
+  z-index: 5;
+}
+
+.r3d-loading[hidden] {
+  display: none;
+}
+
+.r3d-loading-inner {
+  width: min(320px, 82vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.r3d-loading-text {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.r3d-bar {
+  height: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.r3d-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+
+.r3d-loading-note {
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+/* ---------------- HUD ---------------- */
+
+.r3d-hud {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(0deg, rgba(8, 10, 13, 0.95), rgba(8, 10, 13, 0.72) 70%, rgba(8, 10, 13, 0));
+  border-top: 1px solid rgba(44, 45, 48, 0.8);
+  z-index: 4;
+}
+
+.r3d-hud[hidden] {
+  display: none;
+}
+
+.r3d-now {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.r3d-clock {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.r3d-leg {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r3d-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.r3d-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  background: rgba(26, 27, 29, 0.7);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.r3d-chip i {
+  width: 3px;
+  height: 9px;
+  display: block;
+}
+
+.r3d-scrub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.r3d-scrub-time {
+  font-size: 10px;
+  color: var(--text-faint);
+  min-width: 34px;
+}
+
+.r3d-scrub input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.r3d-scrub input[type='range']::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--line-strong);
+}
+
+.r3d-scrub input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border-radius: 0;
+  background: var(--accent);
+  border: 1px solid #0a0c10;
+}
+
+.r3d-scrub input[type='range']::-moz-range-track {
+  height: 2px;
+  background: var(--line-strong);
+}
+
+.r3d-scrub input[type='range']::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  background: var(--accent);
+  border: 1px solid #0a0c10;
+}
+
+.r3d-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+/* 速度控制：音量條式滑桿 */
+.r3d-speed {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 92px;
+  height: 30px;
+  padding: 0 9px;
+  background: rgba(26, 27, 29, 0.9);
+  border: 1px solid var(--line-strong);
+}
+
+.r3d-speed input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  min-width: 44px;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.r3d-speed input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--r3d-fill, 35%),
+    rgba(255, 255, 255, 0.16) var(--r3d-fill, 35%) 100%
+  );
+}
+
+.r3d-speed input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 7px;
+  height: 15px;
+  margin-top: -4.5px;
+  background: var(--accent);
+  border: 1px solid #0a0c10;
+}
+
+.r3d-speed input[type='range']::-moz-range-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.r3d-speed input[type='range']::-moz-range-progress {
+  height: 6px;
+  background: var(--accent);
+}
+
+.r3d-speed input[type='range']::-moz-range-thumb {
+  width: 6px;
+  height: 14px;
+  border-radius: 0;
+  background: var(--accent);
+  border: 1px solid #0a0c10;
+}
+
+.r3d-speed-val {
+  min-width: 38px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.r3d-btn {
+  min-width: 38px;
+  height: 30px;
+  padding: 0 9px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  background: rgba(26, 27, 29, 0.9);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.r3d-btn:active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.r3d-btn.is-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #14150f;
+}
+
+.r3d-dist {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.r3d-fineprint {
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* ---------------- error ---------------- */
+
+.r3d-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 10, 13, 0.96);
+  z-index: 6;
+}
+
+.r3d-error[hidden] {
+  display: none;
+}
+
+.r3d-error-inner {
+  width: min(330px, 84vw);
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.r3d-error-inner p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
+.r3d-error-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------- credits ---------------- */
+
+.r3d-credit-holder {
+  position: absolute;
+  right: 8px;
+  bottom: calc(env(safe-area-inset-bottom) + 4px);
+  max-width: 46vw;
+  max-height: 46px;
+  overflow: hidden;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 3;
+  font-size: 8px;
+  line-height: 1.2;
+  text-align: right;
+  color: #9aa0a6;
+}
+
+.r3d-credit-holder .cesium-credit-logoContainer,
+.r3d-credit-holder .cesium-credit-expand-link {
+  display: none !important;
+}
+
+/* 較矮的裝置：壓縮 HUD */
+@media (max-height: 620px) {
+  .r3d-clock { font-size: 17px; }
+  .r3d-legend { display: none; }
+  .r3d-fineprint { display: none; }
+}
+
+/* 行程卡上的入口按鈕 */
+.btn.r3d-trigger {
+  border-color: rgba(216, 162, 74, 0.45);
+  color: var(--accent);
+}
+
+.btn.r3d-trigger:active {
+  background: var(--accent-dim);
+}

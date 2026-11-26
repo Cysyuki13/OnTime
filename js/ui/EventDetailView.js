@@ -1,5 +1,6 @@
 import { ModeMeta, modeIconHtml } from '../models/TransportMode.js';
 import { HKMapView } from './HKMapView.js';
+import { Route3DPreview } from './Route3DPreview.js';
 
 export class EventDetailView {
   constructor({
@@ -29,6 +30,7 @@ export class EventDetailView {
     /** @type {Set<string>|null} enabled transport modes for filter; null = all on */
     this._enabledModes = null;
     this._mapView = new HKMapView({ mode: 'route', height: 280, defaultOpen: false });
+    this._preview3d = new Route3DPreview();
   }
 
   render(event) {
@@ -190,6 +192,7 @@ export class EventDetailView {
                 <button type="button" class="btn ${isChosen ? 'btn-ghost is-chosen-btn' : 'btn-ghost'} btn-sm touch-target" data-action="select" data-id="${it.id}" ${isChosen ? 'disabled aria-pressed="true"' : 'aria-pressed="false"'}>
                   ${isChosen ? '目前方案' : '選擇此方案'}
                 </button>
+                <button type="button" class="btn btn-ghost btn-sm r3d-trigger" data-action="preview-3d" data-id="${it.id}">3D 沿路預覽</button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="edit-path" data-id="${it.id}">編輯路徑</button>
                 <button type="button" class="btn btn-ghost btn-sm" data-action="remarks" data-id="${it.id}">備註</button>
                 <label class="toggle-wrap">
@@ -472,11 +475,13 @@ export class EventDetailView {
 
     root.querySelector('#btn-back')?.addEventListener('click', () => {
       this._setDrawerOpen(false);
+      this._preview3d.close();
       this._mapView.destroy();
       this.onBack();
     });
     root.querySelector('#btn-delete')?.addEventListener('click', () => {
       this._setDrawerOpen(false);
+      this._preview3d.close();
       this._mapView.destroy();
       this.onDelete();
     });
@@ -569,6 +574,22 @@ export class EventDetailView {
           e.stopPropagation();
           this._toggleExpand(root, el.dataset.id);
         }
+      });
+    });
+
+    root.querySelectorAll('[data-action="preview-3d"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const it = this._event?.itineraries?.find((x) => x.id === id);
+        if (!it) return;
+        this._preview3d.open(it, {
+          origin: this._event?.origin,
+          destination: this._event?.destination,
+          originName: this._event?.origin?.name,
+          destName: this._event?.destination?.name,
+          title: '3D 沿路預覽',
+        });
       });
     });
 
