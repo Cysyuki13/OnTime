@@ -418,19 +418,16 @@ export class Route3DPreview {
       creditContainer: this._creditsEl,
       requestRenderMode: false,
       contextOptions: {
-        webgl: { alpha: false, antialias: true, powerPreference: 'high-performance' },
+        // 手機 GPU 開 MSAA（antialias）等於填充率 ×4，是主要成本之一；改由 CSS 尺寸補償
+        webgl: { alpha: false, antialias: !isMobile, powerPreference: 'high-performance' },
       },
     });
 
     const scene = this._viewer.scene;
-    // 注意：不可 globe.show = false —— Cesium 1.119/1.128 在「無地球 + 3D Tiles」
-    // 的組合下，frustum 指令數可能算成非法值（Invalid array length）而整個 render 停止。
-    // 保留地球但壓成近背景色的暗色底盤，圖磚缺口看到的是暗面而非純黑洞。
-    scene.globe.show = true;
-    scene.globe.baseColor = Cesium.Color.fromCssColorString('#12161d');
-    scene.globe.showGroundAtmosphere = false;
-    scene.globe.enableLighting = false;
-    scene.globe.depthTestAgainstTerrain = false;
+    // 地球整層關掉：只畫 3D Tiles。留著地球等於每幀多畫一遍全屏地形（log-depth + 地形分塊），
+    // 在手機 GPU 上足以把 fps 由 30 拉到 10 以下；之前「渲染停頓」的真正原因是相機被塞了 NaN
+    // （見 _warmUpCamera），不是關地球造成的。
+    scene.globe.show = false;
     scene.skyAtmosphere.show = false;
     scene.skyBox.show = false;
     scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0c10');
@@ -458,6 +455,10 @@ export class Route3DPreview {
     });
 
     this._isMobile = isMobile;
+    // 渲染解像度：預設等於 CSS 像素 × devicePixelRatio。手機 DPR 2–3，
+    // 等於要填 4–9 倍像素，是掉幀的主因。按像素預算壓縮可以线性省 GPU。
+    const dpr = window.devicePixelRatio || 1;
+    this._viewer.resolutionScale = isMobile ? 0.7 : dpr >= 2 ? 0.8 : 1;
     // 相機剖面：攝影測量網格在過低視角會穿入樓宇／樹冠，維持「航拍跟隨」高度
     this._cam = isMobile
       ? { back: 240, ahead: 400, alt: 300, pitch: -54 }
@@ -629,11 +630,11 @@ export class Route3DPreview {
 
     this._tileset = await Cesium.Cesium3DTileset.fromUrl(url, {
       maximumScreenSpaceError: this._isMobile ? 30 : 18,
+      cacheBytes: 268435456,
+      maximumCacheOverflowBytes: 67108864,
       skipLevelOfDetail: true,
       dynamicScreenSpaceError: true,
-      // foveatedScreenSpaceError 會在 Cesium 1.128 觸發 createPotentiallyVisibleSet
-      // 的 RangeError（Invalid array length）令整個 render 停止，保持關閉
-      foveatedScreenSpaceError: false,
+      foveatedScreenSpaceError: true,
       preloadWhenHidden: false,
       showOutline: false,
     });
@@ -1545,6 +1546,10 @@ export class Route3DPreview {
 
   _syncHud(cur) {
     if (!this._el) return;
+    // HUD 每幀都改 DOM（querySelector + textContent）會拖低 fps，8 Hz 已足夠
+    const now = performance.now();
+    if (!this._hudForce && now - (this._hudTs ?? 0) < 120) return;
+    this._hudTs = now;
     const scrub = this._el.querySelector('[data-scrub]');
     if (scrub && document.activeElement !== scrub) scrub.value = String(Math.round(this._progress * 1000));
 

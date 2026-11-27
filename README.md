@@ -211,10 +211,10 @@ Cesium's default "spin around the 3D map centre" behaviour.
 * Gaps are filled by **linear interpolation between the two nearest valid probes** (never by
   copying the previous value forward — that used to carry the 20 m valley height all the way
   up a 480 m hillside, which is what made the ribbon "walk through the mountain").
-* The globe stays enabled (painted near-background #12161d, no imagery) instead of
-  `globe.show = false`: with no globe, Cesium 1.119/1.128 could abort rendering
-  (`RangeError: Invalid array length` in `createPotentiallyVisibleSet`). Missing tiles then
-  show a dark base instead of a black void.
+* `globe.show = false` — only the 3D Tiles are drawn. Keeping the globe on cost a full-screen
+  terrain pass every frame, which on mobile GPUs alone cut the frame rate from 30 to <10;
+  the earlier "rendering stopped" abort was caused by the NaN camera (see below), not by
+  disabling the globe. The scene background `#0a0c10` fills missing tiles.
 * The ribbon hugs the road: 2.2 m above the surface in aerial/overview and **1.6 m** in the
   avatar POVs (just enough to avoid z-fighting with the mesh).
 
@@ -226,6 +226,26 @@ Cesium's frustum split count `Math.ceil(log(far/near)/log(ratio))` non-finite, a
 that to `frustumCommandsList.length` throws `RangeError` — killing the whole render. `_offset`
 is now initialised to 2.2 m in the constructor, the warm-up camera falls back to a finite
 altitude, and `_tick` / `_frameOverview` refuse to push a non-finite anchor into Cesium.
+
+**Fixed in v50 — frame rate regression**
+
+The 3D preview dropped to <10 fps after v48/v49 on both desktop and mobile. The per-frame JS
+was measured at 0.02 ms, so the loss was entirely GPU/draw cost. What changed:
+
+1. `globe.show` had been switched back on in v48 (a stab at the render abort); it is off again —
+   no full-screen terrain pass per frame.
+2. **Render resolution is now capped to a pixel budget** instead of `CSS px × devicePixelRatio`:
+   `resolutionScale = 0.7` on touch devices and `0.8` when `devicePixelRatio ≥ 2` on desktop.
+   A 3× phone was previously asking the GPU to fill 9× the pixels; this is the single largest win.
+3. `antialias` (MSAA ×4) is disabled on touch devices; Cesium's FXAA stays off and the
+   slightly upscaled framebuffer hides the edge stair-steps.
+4. The HUD no longer touches the DOM every frame — `_syncHud` is throttled to 8 Hz (120 ms),
+   with forced updates on seek / mode change.
+5. `cacheBytes` / `maximumCacheOverflowBytes` / `foveatedScreenSpaceError` restored to the v47
+   values, and `maximumScreenSpaceError` is back to 30 (mobile) / 18 (desktop).
+
+`CONFIG.hk3d` gained no new keys; tune `resolutionScale` in `_initViewer` if you want sharper
+(v1) or smoother (0.6) output on a specific device.
 
 **Avatar model**
 

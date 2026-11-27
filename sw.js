@@ -1,4 +1,4 @@
-const CACHE = 'teiji-hk-v49';
+const CACHE = 'teiji-hk-v50';
 const ASSETS = [
   './',
   './index.html',
