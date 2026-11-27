@@ -283,13 +283,18 @@
   flex-wrap: nowrap;
 }
 
+.r3d-controls .r3d-dist {
+  margin-left: auto;
+}
+
 /* 速度控制：音量條式滑桿 */
 .r3d-speed {
   display: flex;
   align-items: center;
   gap: 7px;
   flex: 1 1 auto;
-  min-width: 92px;
+  min-width: 108px;
+  max-width: 200px;
   height: 30px;
   padding: 0 9px;
   background: rgba(26, 27, 29, 0.9);

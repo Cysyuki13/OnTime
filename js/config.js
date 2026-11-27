@@ -40,7 +40,7 @@ export const CONFIG = {
   // 公開示範 key 有 100 併發使用者上限，正式上線前請以電郵向 3dmap@landsd.gov.hk
   // 申請專用 key，並填入 apiKey。
   hk3d: {
-    cesiumBaseUrl: 'https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/',
+    cesiumBaseUrl: 'https://cdn.jsdelivr.net/npm/cesium@1.128.0/Build/Cesium/',
     tilesetUrl: 'https://data.map.gov.hk/api/3d-data/3dtiles/f2/tileset.json',
     // 地政總署 API 文件中的示範 key（僅供開發測試）
     demoTilesetKey: '3967f8f365694e0798af3e7678509421',

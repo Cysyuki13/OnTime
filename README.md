@@ -193,12 +193,39 @@ Cesium's default "spin around the 3D map centre" behaviour.
 * Rail legs: station-graph BFS (`HK_MTR_LINE_EDGES` / `HK_LRT_EDGES`).
 * Walk / bus / minibus legs: OSRM `foot` / `driving`, passing through board/alight stops;
   falls back to a smooth arc when offline.
-* Heights are sampled from the photogrammetry mesh: 200 probes along the path, and each
-  probe takes the **lowest of a 5-point cross** (±7 m) so a neighbouring roof or tree crown
-  cannot lift the line into mid-air. A ±3-sample window minimum plus 5-point smoothing then
-  removes remaining spikes. Below 55 % success the ribbon switches to a floating profile.
-* The ribbon now hugs the road: 2.2 m above the surface in aerial/overview and **0.9 m** in
-  the avatar POVs (just enough to avoid z-fighting with the mesh).
+* Heights come from the photogrammetry mesh **on the path's own column** — never offset
+  sideways. Sampling is a multi-pass job, because `Cesium3DTileset.getHeight` only ray-casts
+  against tiles that are currently selected:
+  1. *Wide pass* — camera still framing the whole corridor, one probe per route vertex
+     (stride-capped at 420 probes).
+  2. *Re-shoot passes (up to 3)* — every probe that is empty, or that disagrees with its
+     neighbours by more than 8 m (distant coarse LOD, tree crowns, rooftops), is clustered;
+     each cluster gets its own close camera hop and is re-probed once the fine tiles arrive.
+  3. *Filtering* — 5-point median (kills 1–2 point spikes), then a real-slope limit
+     (`Δh ≤ 0.45 × horizontal distance`, ≈24°), applied forwards and backwards, so a hillside
+     climbs continuously instead of stair-stepping or flattening.
+  4. *Verification* — every probe is ray-cast again and any vertex below the surface is lifted
+     to ground + 0.5 m; the midpoint between two probes is checked as well, so a convex ridge
+     can't be cut by the straight segment joining them. A gentle median + a 31° slope pass runs
+     afterwards to keep the lifted profile smooth.
+* Gaps are filled by **linear interpolation between the two nearest valid probes** (never by
+  copying the previous value forward — that used to carry the 20 m valley height all the way
+  up a 480 m hillside, which is what made the ribbon "walk through the mountain").
+* The globe stays enabled (painted near-background #12161d, no imagery) instead of
+  `globe.show = false`: with no globe, Cesium 1.119/1.128 could abort rendering
+  (`RangeError: Invalid array length` in `createPotentiallyVisibleSet`). Missing tiles then
+  show a dark base instead of a black void.
+* The ribbon hugs the road: 2.2 m above the surface in aerial/overview and **1.6 m** in the
+  avatar POVs (just enough to avoid z-fighting with the mesh).
+
+**Fixed in v49 — "Rendering has stopped / Invalid array length"**
+
+The camera ray in `_warmUpCamera` was built with the ribbon offset *before* that offset exists
+(`_offset` is only set after sampling), so the destination height was `NaN`. A NaN camera makes
+Cesium's frustum split count `Math.ceil(log(far/near)/log(ratio))` non-finite, and assigning
+that to `frustumCommandsList.length` throws `RangeError` — killing the whole render. `_offset`
+is now initialised to 2.2 m in the constructor, the warm-up camera falls back to a finite
+altitude, and `_tick` / `_frameOverview` refuse to push a non-finite anchor into Cesium.
 
 **Avatar model**
 

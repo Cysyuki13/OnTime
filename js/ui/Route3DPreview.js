@@ -57,6 +57,7 @@ export class Route3DPreview {
     // 速度：滑桿 0–100 映射到 speedMin–speedMax（指數刻度，慢速段更細）
     this._speedMin = CONFIG.hk3d?.speedMin ?? 0.02;
     this._speedMax = CONFIG.hk3d?.speedMax ?? 1;
+    this._offset = 2.2;
     this._speed = clamp(CONFIG.hk3d?.speedDefault ?? 0.35, this._speedMin, this._speedMax);
     this._camMode = 'overview'; // overview | aerial | third | first
     this._avatarModel = null;
@@ -422,7 +423,14 @@ export class Route3DPreview {
     });
 
     const scene = this._viewer.scene;
-    scene.globe.show = false;
+    // 注意：不可 globe.show = false —— Cesium 1.119/1.128 在「無地球 + 3D Tiles」
+    // 的組合下，frustum 指令數可能算成非法值（Invalid array length）而整個 render 停止。
+    // 保留地球但壓成近背景色的暗色底盤，圖磚缺口看到的是暗面而非純黑洞。
+    scene.globe.show = true;
+    scene.globe.baseColor = Cesium.Color.fromCssColorString('#12161d');
+    scene.globe.showGroundAtmosphere = false;
+    scene.globe.enableLighting = false;
+    scene.globe.depthTestAgainstTerrain = false;
     scene.skyAtmosphere.show = false;
     scene.skyBox.show = false;
     scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0c10');
@@ -621,14 +629,17 @@ export class Route3DPreview {
 
     this._tileset = await Cesium.Cesium3DTileset.fromUrl(url, {
       maximumScreenSpaceError: this._isMobile ? 30 : 18,
-      cacheBytes: 268435456,
-      maximumCacheOverflowBytes: 67108864,
       skipLevelOfDetail: true,
       dynamicScreenSpaceError: true,
-      foveatedScreenSpaceError: true,
+      // foveatedScreenSpaceError 會在 Cesium 1.128 觸發 createPotentiallyVisibleSet
+      // 的 RangeError（Invalid array length）令整個 render 停止，保持關閉
+      foveatedScreenSpaceError: false,
       preloadWhenHidden: false,
       showOutline: false,
     });
+
+    // Scene.getHeight(CLAMP_TO_3D_TILE) 只會查 enableCollision 的圖磚集
+    this._tileset.enableCollision = true;
 
     this._tileset.tileFailed.addEventListener((e) => {
       console.warn('[3D preview] tile failed', e?.url, e?.message);
@@ -699,27 +710,33 @@ export class Route3DPreview {
 
   _sampleHeight(lng, lat) {
     const Cesium = this._cesium;
+    const scene = this._viewer.scene;
+    const carto = Cesium.Cartographic.fromDegrees(lng, lat);
+
+    // 首選：Scene.getHeight + CLAMP_TO_3D_TILE —— 純 CPU 三角面射線，
+    // 不需要 offscreen pick render（那個做法會令 Cesium 停止渲染）
     try {
-      const h = this._viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(lng, lat));
+      if (typeof scene.getHeight === 'function' && Cesium.HeightReference) {
+        const h = scene.getHeight(carto, Cesium.HeightReference.CLAMP_TO_3D_TILE);
+        if (Number.isFinite(h)) return h;
+      }
+    } catch {
+      /* 退回深度取樣 */
+    }
+
+    try {
+      const h = scene.sampleHeight(carto);
       return Number.isFinite(h) ? h : null;
     } catch {
       return null;
     }
   }
 
-  _probeGround(lng, lat) {
-    // 7 m 十字探測：道路兩側若有樓宇／樹冠，取最低者代表實際路（地）面
-    const d = 0.000065; // ≈7 m
-    const cand = [
-      this._sampleHeight(lng, lat),
-      this._sampleHeight(lng + d, lat),
-      this._sampleHeight(lng - d, lat),
-      this._sampleHeight(lng, lat + d),
-      this._sampleHeight(lng, lat - d),
-    ].filter((h) => h != null);
-    if (!cand.length) return null;
-    cand.sort((a, b) => a - b);
-    return cand[0];
+  async _rayGround(lng, lat) {
+    // 只取「這一點」的深度高度；不使用 scene.pickFromRay（會在渲染中重入，Cesium 會報
+    // Invalid array length 並停止渲染）。鄰近點偏移取樣會在山坡上取到較低地面，
+    // 令路線鑽入山體，所以這裡絕不橫向探測。
+    return this._sampleHeight(lng, lat);
   }
 
   async _warmUpCamera(geom) {
@@ -730,10 +747,13 @@ export class Route3DPreview {
     const start = coords[0];
     const ahead = coords[Math.min(coords.length - 1, 30)];
     const heading = this._bearing(start, ahead);
-    const alt = (this._cam?.alt ?? 135) + this._offset;
+    // 注意：_offset 在取樣完成前仍是 undefined，直接用會令高度變 NaN，
+    // 相機 NaN 會令 Cesium 的 frustum 計算爆掉（Invalid array length）
+    const offset = Number.isFinite(this._offset) ? this._offset : 0;
+    const alt = (this._cam?.alt ?? 135) + offset;
 
     this._viewer.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(start.lng, start.lat, alt),
+      destination: Cesium.Cartesian3.fromDegrees(start.lng, start.lat, Number.isFinite(alt) ? alt : 150),
       orientation: { heading, pitch: Cesium.Math.toRadians(this._cam?.pitch ?? -42), roll: 0 },
     });
 
@@ -744,61 +764,182 @@ export class Route3DPreview {
     ]);
   }
 
+  async _waitTiles(ms = 900) {
+    await Promise.race([
+      delay(ms),
+      new Promise((r) => this._tileset?.allTilesLoaded.addEventListener(() => r())),
+    ]);
+  }
+
+  _meterDist(a, b) {
+    const rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * 111320;
+    const dLng = (b.lng - a.lng) * 111320 * Math.cos(((a.lat + b.lat) / 2) * rad);
+    return Math.max(1, Math.hypot(dLat, dLng));
+  }
+
+  // 把鏡頭移到某一小段上空，等該處圖磚載入後重新取樣
+  async _reshoot(pts) {
+    const Cesium = this._cesium;
+    const mid = pts[Math.floor(pts.length / 2)];
+    const base = Math.max(...pts.map((p) => (Number.isFinite(p.h) ? p.h : 0)), 40);
+    const heading = pts.length > 1 ? this._bearing(pts[0], pts[pts.length - 1]) : 0;
+
+    this._viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(mid.lng, mid.lat, base + 260),
+      orientation: { heading: Number.isFinite(heading) ? heading : 0, pitch: Cesium.Math.toRadians(-74), roll: 0 },
+    });
+    await this._waitTiles(1100);
+    for (const p of pts) {
+      const h = this._sampleHeight(p.lng, p.lat);
+      if (h != null) p.h = h;
+    }
+    await new Promise((r) => requestAnimationFrame(() => r()));
+  }
+
+  _medianFilter(heights, radius = 2) {
+    const out = heights.slice();
+    for (let k = 0; k < heights.length; k += 1) {
+      const w = heights
+        .slice(Math.max(0, k - radius), Math.min(heights.length, k + radius + 1))
+        .filter((h) => h != null)
+        .sort((a, b) => a - b);
+      if (w.length) out[k] = w[Math.floor(w.length / 2)];
+    }
+    return out;
+  }
+
+  _limitSlope(picked, ratio) {
+    for (let k = 1; k < picked.length; k += 1) {
+      const lim = Math.max(1.2, ratio * this._meterDist(picked[k - 1], picked[k]));
+      picked[k].h = Math.min(picked[k - 1].h + lim, Math.max(picked[k - 1].h - lim, picked[k].h));
+    }
+    for (let k = picked.length - 2; k >= 0; k -= 1) {
+      const lim = Math.max(1.2, ratio * this._meterDist(picked[k], picked[k + 1]));
+      picked[k].h = Math.min(picked[k + 1].h + lim, Math.max(picked[k + 1].h - lim, picked[k].h));
+    }
+  }
+
   async _sampleGround(geom) {
+    const Cesium = this._cesium;
     if (!this._viewer.scene.pickPositionSupported) return null;
 
     await delay(120);
 
-    const maxSamples = 200;
     const all = [];
     for (const leg of geom.legs) {
       for (let i = 0; i < leg.coordinates.length; i += 1) {
         all.push({ leg, i, ...leg.coordinates[i] });
       }
     }
-    const stride = Math.max(1, Math.floor(all.length / maxSamples));
 
+    const MAX = 420;
+    const stride = Math.max(1, Math.ceil(all.length / MAX));
     const picked = [];
-    for (let k = 0; k < all.length; k += stride) {
-      const p = all[k];
-      // 五點探測取最低值：避免路線被旁邊樓頂／樹冠的高度抬上半空
-      picked.push({ ...p, h: this._probeGround(p.lng, p.lat) });
+    for (let k = 0; k < all.length; k += stride) picked.push({ ...all[k], h: null });
+
+    const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
+
+    // 第 1 輪：廣域視角（整條路線都在畫面上）逐點取樣。
+    // Cesium3DTileset.getHeight 只對「已選中圖磚」做射線，所以視角必須覆蓋全線。
+    for (let n = 0; n < picked.length; n += 1) {
+      const p = picked[n];
+      p.h = this._sampleHeight(p.lng, p.lat);
+      if (n % 6 === 5) await nextFrame();
+      if (n % 16 === 0) this._status(`貼合地面高度… ${n}/${picked.length}`, 84);
+    }
+
+    // 第 2 輪：把「缺值」與「與鄰點相差超過 8 m」（遠處粗層網格、樹冠、屋頂）的點
+    // 分群，逐群把鏡頭移到該處上空補拍，用細層網格重新取樣。
+    const suspects = () => {
+      const out = [];
+      picked.forEach((p, k) => {
+        if (p.h == null) {
+          out.push(p);
+          return;
+        }
+        const nb = [];
+        for (let d = -2; d <= 2; d += 1) {
+          const q = picked[k + d];
+          if (q && q !== p && q.h != null) nb.push(q.h);
+        }
+        if (!nb.length) return;
+        nb.sort((a, b) => a - b);
+        const m = nb[Math.floor(nb.length / 2)];
+        if (Math.abs(p.h - m) > 8) out.push(p);
+      });
+      return out;
+    };
+
+    for (let round = 0; round < 3; round += 1) {
+      const list = suspects();
+      if (!list.length) break;
+
+      const clusters = [];
+      let cur = null;
+      let lastIdx = -99;
+      const gap = Math.max(4, stride * 5);
+      for (const p of list) {
+        const idx = picked.indexOf(p);
+        if (!cur || idx - lastIdx > gap) {
+          cur = { pts: [], i0: idx, i1: idx };
+          clusters.push(cur);
+        }
+        cur.pts.push(p);
+        cur.i1 = idx;
+        lastIdx = idx;
+      }
+
+      this._status(`補拍 ${round + 1}：${clusters.length} 段`, 88);
+      for (const cl of clusters.slice(0, 10)) {
+        await this._reshoot(cl.pts);
+      }
     }
 
     const valid = picked.filter((p) => p.h != null).length;
-    if (valid / picked.length < 0.55) return null;
+    if (valid < Math.max(20, picked.length * 0.5)) return null;
 
-    // 窗口最小值 + 距離加權：把樓頂／樹冠尖峰壓回路邊高度，路線才會貼地
+    // 補缺值：以前後最近的已知點線性內插
     for (let k = 0; k < picked.length; k += 1) {
-      const win = picked.slice(Math.max(0, k - 3), k + 4).map((p) => p.h).filter((h) => h != null);
-      if (!win.length) continue;
-      const lo = Math.min(...win);
-      const cur = picked[k].h;
-      picked[k].h = cur == null ? lo : cur > lo ? Math.min(cur, lo + 1.2) : cur;
+      if (picked[k].h != null) continue;
+      let a = k - 1;
+      while (a >= 0 && picked[a].h == null) a -= 1;
+      let b = k + 1;
+      while (b < picked.length && picked[b].h == null) b += 1;
+      if (a < 0 && b >= picked.length) picked[k].h = 0;
+      else if (a < 0) picked[k].h = picked[b].h;
+      else if (b >= picked.length) picked[k].h = picked[a].h;
+      else picked[k].h = picked[a].h + (picked[b].h - picked[a].h) * ((k - a) / (b - a));
     }
 
-    // 補齊缺值並平滑
-    const filled = [];
-    let lastValid = null;
-    for (const p of picked) {
-      if (p.h == null && lastValid != null) p.h = lastValid;
-      if (p.h != null) lastValid = p.h;
-      filled.push(p.h);
-    }
-    if (filled[0] == null) {
-      const first = filled.find((h) => h != null);
-      filled[0] = first ?? 0;
-    }
-    for (let k = 1; k < filled.length; k += 1) {
-      if (filled[k] == null) filled[k] = filled[k - 1];
+    // 平滑：中值（去尖刺）→ 坡度限制（約 24°，用真實點距）
+    let hs = this._medianFilter(picked.map((p) => p.h), 2);
+    picked.forEach((p, k) => { p.h = hs[k]; });
+    this._limitSlope(picked, 0.45);
+
+    // 貼地驗證：任何低於實際地面的點抬回地面 + 0.5 m（含中點，避免凸起山脊被切穿）
+    const CLEAR = 0.5;
+    for (let k = 0; k < picked.length; k += 1) {
+      const a = picked[k];
+      const g = this._sampleHeight(a.lng, a.lat);
+      if (g != null && a.h < g + CLEAR) a.h = g + CLEAR;
+      const b = picked[k + 1];
+      if (!b) break;
+      const gm = this._sampleHeight((a.lng + b.lng) / 2, (a.lat + b.lat) / 2);
+      if (gm != null && (a.h + b.h) / 2 < gm + CLEAR) {
+        const lift = gm + CLEAR - (a.h + b.h) / 2;
+        a.h += lift;
+        b.h += lift;
+      }
+      if (k % 20 === 0) this._status(`貼地驗證… ${k}/${picked.length}`, 90);
     }
 
-    const smoothed = filled.map((h, k) => {
-      const win = filled.slice(Math.max(0, k - 2), k + 3);
-      return win.reduce((a, b) => a + b, 0) / win.length;
-    });
+    // 抬升後再校一次平滑（限坡度放寬到 0.6，約 31°，保留真實斜坡）
+    hs = this._medianFilter(picked.map((p) => p.h), 1);
+    picked.forEach((p, k) => { p.h = hs[k]; });
+    this._limitSlope(picked, 0.6);
 
-    // 回填到每一段的每個點：用對應取樣點的高度線性內插
+    // 回填到每一段的每個點
     for (const leg of geom.legs) leg.heights = new Array(leg.coordinates.length).fill(null);
 
     const groups = new Map();
@@ -814,14 +955,12 @@ export class Route3DPreview {
         while (si < sorted.length - 1 && sorted[si + 1].i <= i) si += 1;
         const cur = sorted[si];
         const nxt = sorted[si + 1];
-        if (!nxt) {
-          leg.heights[i] = smoothed[si];
+        if (!nxt || cur.i === i) {
+          leg.heights[i] = cur.h;
           continue;
         }
-        const t = cur.i === nxt.i ? 0 : (i - cur.i) / (nxt.i - cur.i);
-        const hCur = smoothed[picked.indexOf(cur)];
-        const hNxt = smoothed[picked.indexOf(nxt)];
-        leg.heights[i] = hCur + (hNxt - hCur) * clamp(t, 0, 1);
+        const t = (i - cur.i) / (nxt.i - cur.i);
+        leg.heights[i] = cur.h + (nxt.h - cur.h) * clamp(t, 0, 1);
       }
     }
 
@@ -915,7 +1054,7 @@ export class Route3DPreview {
           color: Cesium.Color.fromCssColorString('#e6e7e8'),
           outlineColor: Cesium.Color.fromCssColorString('#0a0c10'),
           outlineWidth: 2,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          disableDepthTestDistance: 2500,
         },
         label: {
           text: wp.name,
@@ -926,7 +1065,7 @@ export class Route3DPreview {
           backgroundPadding: new Cesium.Cartesian2(7, 4),
           pixelOffset: new Cesium.Cartesian2(0, -18),
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          disableDepthTestDistance: 2500,
           scaleByDistance: new Cesium.NearFarScalar(60, 1, 3000, 0.7),
         },
       });
@@ -946,7 +1085,7 @@ export class Route3DPreview {
             color: Cesium.Color.fromCssColorString('#d8a24a').withAlpha(0.85),
             outlineColor: Cesium.Color.fromCssColorString('#0a0c10'),
             outlineWidth: 1,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 2500,
           },
           show: false,
         })
@@ -964,7 +1103,7 @@ export class Route3DPreview {
         color: Cesium.Color.fromCssColorString('#f3d9a4'),
         outlineColor: Cesium.Color.fromCssColorString('#0a0c10'),
         outlineWidth: 3,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 2500,
       },
     });
 
@@ -1161,8 +1300,8 @@ export class Route3DPreview {
     const cLng = (b.minLng + b.maxLng) / 2;
     const mid = this._pointAt(this._totalDistance / 2);
     const heading = this._bearing(this._pointAt(0), this._pointAt(this._totalDistance));
-    const target = Cesium.Cartesian3.fromDegrees(cLng, cLat, mid.h + this._offset);
-
+    const target = Cesium.Cartesian3.fromDegrees(cLng, cLat, mid.h + (Number.isFinite(this._offset) ? this._offset : 0));
+    if (![target.x, target.y, target.z, heading].every(Number.isFinite)) return;
     let range = Math.max(900, this._totalDistance * 0.45);
     for (let i = 0; i < 5; i += 1) {
       try {
@@ -1208,7 +1347,7 @@ export class Route3DPreview {
 
     const base = this._baseOffset ?? 28;
     const offset =
-      this._camMode === 'overview' ? base + 8 : this._camMode === 'aerial' ? base : 0.9;
+      this._camMode === 'overview' ? base + 8 : this._camMode === 'aerial' ? base : 1.6;
     this._setOffset(offset);
 
     this._checkpoints?.forEach((e) => {
@@ -1379,6 +1518,11 @@ export class Route3DPreview {
       sm.heading += this._angleDelta(sm.heading, targetHeading) * (force ? 1 : f * 1.4);
 
       this._camLastTs = ts;
+      // 防禦：任何 NaN 傳入 Cesium 相機會令 frustum 計算爆掉（Invalid array length）
+      if (![sm.lat, sm.lng, sm.height, sm.pitch, sm.dist, sm.heading].every(Number.isFinite)) {
+        this._syncHud(cur);
+        return;
+      }
       const anchor = Cesium.Cartesian3.fromDegrees(sm.lng, sm.lat, sm.height);
       const pitchRad = Cesium.Math.toRadians(sm.pitch);
 
